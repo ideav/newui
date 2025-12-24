@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Web приложение</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <img src="images/logo.png" alt="Логотип" class="logo">
+        </div>
+        <div class="navbar-right">
+            <button id="theme-toggle" class="theme-toggle">🌙 Темная</button>
+        </div>
+    </nav>
+
+    <!-- Login Form -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Вход</h1>
+            <p>Войдите в свой аккаунт</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email адрес</label>
+                    <input type="email" id="email" name="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required placeholder="Введите пароль">
+                </div>
+
+                <button type="submit" class="btn-primary">Войти</button>
+
+                <div class="auth-links">
+                    Нет аккаунта? <a href="register.html">Зарегистрироваться</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

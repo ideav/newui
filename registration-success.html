@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация успешна - Web приложение</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <img src="images/logo.png" alt="Логотип" class="logo">
+        </div>
+        <div class="navbar-right">
+            <button id="theme-toggle" class="theme-toggle">🌙 Темная</button>
+        </div>
+    </nav>
+
+    <!-- Success Message -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Регистрация успешна!</h1>
+            <p>Мы отправили письмо с подтверждением на ваш email адрес.</p>
+
+            <div class="success-message">
+                <strong>Важно:</strong> Для завершения регистрации, пожалуйста, перейдите по ссылке из письма.
+            </div>
+
+            <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                Для демонстрации: <br>
+                <a id="confirmation-link" href="#" style="word-break: break-all; color: var(--link-color);">Ссылка подтверждения</a>
+            </p>
+
+            <div class="auth-links" style="margin-top: 2rem;">
+                <a href="login.html">Вернуться на страницу входа</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

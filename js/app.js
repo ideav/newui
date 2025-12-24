@@ -1,0 +1,264 @@
+// Theme management
+class ThemeManager {
+    constructor() {
+        this.theme = localStorage.getItem('theme') || 'light';
+        this.applyTheme();
+    }
+
+    applyTheme() {
+        document.documentElement.setAttribute('data-theme', this.theme);
+        this.updateThemeButton();
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', this.theme);
+        this.applyTheme();
+    }
+
+    updateThemeButton() {
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.textContent = this.theme === 'light' ? '🌙 Темная' : '☀️ Светлая';
+        }
+    }
+}
+
+// Authentication management
+class AuthManager {
+    constructor() {
+        this.currentUser = this.loadUser();
+    }
+
+    loadUser() {
+        const userJson = localStorage.getItem('currentUser');
+        return userJson ? JSON.parse(userJson) : null;
+    }
+
+    saveUser(user) {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUser = user;
+    }
+
+    clearUser() {
+        localStorage.removeItem('currentUser');
+        this.currentUser = null;
+    }
+
+    isAuthenticated() {
+        return this.currentUser !== null && this.currentUser.emailConfirmed === true;
+    }
+
+    register(email, password) {
+        // Store pending user (waiting for email confirmation)
+        const users = this.getUsers();
+
+        // Check if email already exists
+        if (users.some(u => u.email === email)) {
+            return { success: false, message: 'Этот email уже зарегистрирован' };
+        }
+
+        const confirmationToken = this.generateToken();
+        const newUser = {
+            email,
+            password, // In production, this should be hashed
+            emailConfirmed: false,
+            confirmationToken,
+            createdAt: new Date().toISOString()
+        };
+
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+
+        return {
+            success: true,
+            confirmationToken,
+            message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.'
+        };
+    }
+
+    confirmEmail(token) {
+        const users = this.getUsers();
+        const user = users.find(u => u.confirmationToken === token);
+
+        if (!user) {
+            return { success: false, message: 'Неверный токен подтверждения' };
+        }
+
+        user.emailConfirmed = true;
+        localStorage.setItem('users', JSON.stringify(users));
+
+        return { success: true, message: 'Email подтвержден успешно!' };
+    }
+
+    login(email, password) {
+        const users = this.getUsers();
+        const user = users.find(u => u.email === email && u.password === password);
+
+        if (!user) {
+            return { success: false, message: 'Неверный email или пароль' };
+        }
+
+        if (!user.emailConfirmed) {
+            return { success: false, message: 'Пожалуйста, подтвердите ваш email перед входом' };
+        }
+
+        this.saveUser(user);
+        return { success: true, message: 'Вход выполнен успешно!' };
+    }
+
+    logout() {
+        this.clearUser();
+        window.location.href = 'login.html';
+    }
+
+    getUsers() {
+        const usersJson = localStorage.getItem('users');
+        return usersJson ? JSON.parse(usersJson) : [];
+    }
+
+    generateToken() {
+        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
+
+    getUserInitial() {
+        if (this.currentUser && this.currentUser.email) {
+            return this.currentUser.email.charAt(0).toUpperCase();
+        }
+        return 'U';
+    }
+
+    getUserEmail() {
+        return this.currentUser ? this.currentUser.email : '';
+    }
+}
+
+// Initialize theme and auth managers
+const themeManager = new ThemeManager();
+const authManager = new AuthManager();
+
+// Theme toggle handler
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            themeManager.toggleTheme();
+        });
+    }
+
+    // Update account info in navbar
+    const accountAvatar = document.getElementById('account-avatar');
+    const accountEmail = document.getElementById('account-email');
+
+    if (accountAvatar && accountEmail && authManager.currentUser) {
+        accountAvatar.textContent = authManager.getUserInitial();
+        accountEmail.textContent = authManager.getUserEmail();
+    }
+
+    // Logout handler
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            authManager.logout();
+        });
+    }
+
+    // Registration form handler
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (password !== confirmPassword) {
+                alert('Пароли не совпадают');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('Пароль должен содержать минимум 6 символов');
+                return;
+            }
+
+            const result = authManager.register(email, password);
+
+            if (result.success) {
+                // Show confirmation link (in production, this would be sent via email)
+                const confirmationLink = `${window.location.origin}/confirm.html?token=${result.confirmationToken}`;
+                localStorage.setItem('lastConfirmationLink', confirmationLink);
+                window.location.href = 'registration-success.html';
+            } else {
+                alert(result.message);
+            }
+        });
+    }
+
+    // Login form handler
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const result = authManager.login(email, password);
+
+            if (result.success) {
+                window.location.href = 'index.html';
+            } else {
+                alert(result.message);
+            }
+        });
+    }
+
+    // Email confirmation handler
+    const confirmBtn = document.getElementById('confirm-email-btn');
+    if (confirmBtn) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token) {
+            confirmBtn.addEventListener('click', () => {
+                const result = authManager.confirmEmail(token);
+
+                if (result.success) {
+                    alert(result.message);
+                    window.location.href = 'login.html';
+                } else {
+                    alert(result.message);
+                }
+            });
+        }
+    }
+
+    // Show confirmation link on success page
+    const confirmationLinkEl = document.getElementById('confirmation-link');
+    if (confirmationLinkEl) {
+        const link = localStorage.getItem('lastConfirmationLink');
+        if (link) {
+            confirmationLinkEl.href = link;
+            confirmationLinkEl.textContent = link;
+        }
+    }
+
+    // Protect authenticated pages
+    const protectedPages = ['index.html', '/'];
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+    if (protectedPages.some(page => currentPage.includes(page) || currentPage === '')) {
+        if (!authManager.isAuthenticated() && currentPage !== 'login.html' && currentPage !== 'register.html') {
+            const accountInfo = document.querySelector('.account-info');
+            if (accountInfo) {
+                // Only redirect if we're on the main page and not authenticated
+                if (currentPage === 'index.html' || currentPage === '') {
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+    }
+});
