@@ -1,3 +1,33 @@
+// API Configuration
+class ApiConfig {
+    constructor() {
+        this.host = localStorage.getItem('apiHost') || '';
+        this.db = localStorage.getItem('apiDb') || '';
+    }
+
+    setConfig(host, db) {
+        this.host = host;
+        this.db = db;
+        localStorage.setItem('apiHost', host);
+        localStorage.setItem('apiDb', db);
+    }
+
+    getConfig() {
+        return {
+            host: this.host,
+            db: this.db
+        };
+    }
+
+    isConfigured() {
+        return this.host && this.db;
+    }
+
+    getBaseUrl() {
+        return `https://${this.host}/${this.db}`;
+    }
+}
+
 // Theme management
 class ThemeManager {
     constructor() {
@@ -26,8 +56,11 @@ class ThemeManager {
 
 // Authentication management
 class AuthManager {
-    constructor() {
+    constructor(apiConfig) {
+        this.apiConfig = apiConfig;
         this.currentUser = this.loadUser();
+        this.xsrfToken = localStorage.getItem('xsrfToken') || '';
+        this.authToken = localStorage.getItem('authToken') || '';
     }
 
     loadUser() {
@@ -42,14 +75,122 @@ class AuthManager {
 
     clearUser() {
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('xsrfToken');
+        localStorage.removeItem('authToken');
         this.currentUser = null;
+        this.xsrfToken = '';
+        this.authToken = '';
     }
 
     isAuthenticated() {
-        return this.currentUser !== null && this.currentUser.emailConfirmed === true;
+        return this.currentUser !== null && this.currentUser.user !== 'guest';
     }
 
-    register(email, password) {
+    async checkAuth() {
+        if (!this.apiConfig.isConfigured()) {
+            console.log('API not configured, using localStorage mode');
+            return { success: false, mode: 'localStorage', message: 'API not configured' };
+        }
+
+        try {
+            const url = `${this.apiConfig.getBaseUrl()}/xsrf`;
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Save XSRF token for POST requests
+            this.xsrfToken = data._xsrf || '';
+            localStorage.setItem('xsrfToken', this.xsrfToken);
+
+            // Save user info
+            const user = {
+                user: data.user || 'guest',
+                role: data.role || 'guest',
+                id: data.id || '',
+                token: data.token || ''
+            };
+
+            this.saveUser(user);
+
+            if (data.token) {
+                this.authToken = data.token;
+                localStorage.setItem('authToken', data.token);
+            }
+
+            return {
+                success: true,
+                mode: 'api',
+                user: user,
+                isGuest: user.user === 'guest'
+            };
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            return {
+                success: false,
+                mode: 'localStorage',
+                message: error.message
+            };
+        }
+    }
+
+    async register(email, password) {
+        if (!this.apiConfig.isConfigured()) {
+            return this.registerLocalStorage(email, password);
+        }
+
+        try {
+            const url = `${this.apiConfig.getBaseUrl()}/_m_new/18?up=1&next_act=inform`;
+            const formData = new URLSearchParams();
+            formData.append('_xsrf', this.xsrfToken);
+            formData.append('t18', email);
+            formData.append('t20', password);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.error || data.msg) {
+                return {
+                    success: !data.error,
+                    message: data.msg || 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
+                    mode: 'api'
+                };
+            }
+
+            return {
+                success: true,
+                message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
+                mode: 'api'
+            };
+        } catch (error) {
+            console.error('Registration failed:', error);
+            return {
+                success: false,
+                message: `Ошибка регистрации: ${error.message}`,
+                mode: 'api'
+            };
+        }
+    }
+
+    registerLocalStorage(email, password) {
         // Store pending user (waiting for email confirmation)
         const users = this.getUsers();
 
@@ -73,7 +214,8 @@ class AuthManager {
         return {
             success: true,
             confirmationToken,
-            message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.'
+            message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
+            mode: 'localStorage'
         };
     }
 
@@ -91,7 +233,72 @@ class AuthManager {
         return { success: true, message: 'Email подтвержден успешно!' };
     }
 
-    login(email, password) {
+    async login(email, password) {
+        if (!this.apiConfig.isConfigured()) {
+            return this.loginLocalStorage(email, password);
+        }
+
+        try {
+            const url = `${this.apiConfig.getBaseUrl()}/auth?JSON`;
+            const formData = new URLSearchParams();
+            formData.append('db', this.apiConfig.db);
+            formData.append('login', email);
+            formData.append('pwd', password);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.msg && data.msg !== '') {
+                return {
+                    success: false,
+                    message: data.msg,
+                    mode: 'api'
+                };
+            }
+
+            // Save tokens and user info
+            this.xsrfToken = data._xsrf || '';
+            this.authToken = data.token || '';
+            localStorage.setItem('xsrfToken', this.xsrfToken);
+            localStorage.setItem('authToken', this.authToken);
+
+            const user = {
+                user: email,
+                id: data.id || '',
+                token: data.token || '',
+                role: 'user'
+            };
+
+            this.saveUser(user);
+
+            return {
+                success: true,
+                message: 'Вход выполнен успешно!',
+                mode: 'api'
+            };
+        } catch (error) {
+            console.error('Login failed:', error);
+            return {
+                success: false,
+                message: `Ошибка входа: ${error.message}`,
+                mode: 'api'
+            };
+        }
+    }
+
+    loginLocalStorage(email, password) {
         const users = this.getUsers();
         const user = users.find(u => u.email === email && u.password === password);
 
@@ -122,28 +329,40 @@ class AuthManager {
     }
 
     getUserInitial() {
-        if (this.currentUser && this.currentUser.email) {
-            return this.currentUser.email.charAt(0).toUpperCase();
+        if (this.currentUser) {
+            const userField = this.currentUser.user || this.currentUser.email || '';
+            if (userField && userField !== 'guest') {
+                return userField.charAt(0).toUpperCase();
+            }
         }
-        return 'U';
+        return 'G';
     }
 
     getUserEmail() {
-        return this.currentUser ? this.currentUser.email : '';
+        if (this.currentUser) {
+            return this.currentUser.user || this.currentUser.email || 'guest';
+        }
+        return 'guest';
     }
 }
 
 // Initialize theme and auth managers
 const themeManager = new ThemeManager();
-const authManager = new AuthManager();
+const apiConfig = new ApiConfig();
+const authManager = new AuthManager(apiConfig);
 
 // Theme toggle handler
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
         themeToggle.addEventListener('click', () => {
             themeManager.toggleTheme();
         });
+    }
+
+    // Check authentication status with API if configured
+    if (apiConfig.isConfigured()) {
+        await authManager.checkAuth();
     }
 
     // Update account info in navbar
@@ -153,6 +372,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (accountAvatar && accountEmail && authManager.currentUser) {
         accountAvatar.textContent = authManager.getUserInitial();
         accountEmail.textContent = authManager.getUserEmail();
+
+        // Hide account info if guest user
+        const accountInfo = document.querySelector('.account-info');
+        if (accountInfo && authManager.currentUser.user === 'guest') {
+            accountInfo.style.display = 'none';
+        }
     }
 
     // Logout handler
@@ -167,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Registration form handler
     const registerForm = document.getElementById('register-form');
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
@@ -184,13 +409,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const result = authManager.register(email, password);
+            const result = await authManager.register(email, password);
 
             if (result.success) {
-                // Show confirmation link (in production, this would be sent via email)
-                const confirmationLink = `${window.location.origin}/confirm.html?token=${result.confirmationToken}`;
-                localStorage.setItem('lastConfirmationLink', confirmationLink);
-                window.location.href = 'registration-success.html';
+                if (result.mode === 'localStorage' && result.confirmationToken) {
+                    // Show confirmation link (in production, this would be sent via email)
+                    const confirmationLink = `${window.location.origin}/confirm.html?token=${result.confirmationToken}`;
+                    localStorage.setItem('lastConfirmationLink', confirmationLink);
+                }
+                alert(result.message);
+
+                if (result.mode === 'api') {
+                    // For API mode, redirect to login since email will be sent
+                    window.location.href = 'login.html';
+                } else {
+                    window.location.href = 'registration-success.html';
+                }
             } else {
                 alert(result.message);
             }
@@ -200,13 +434,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login form handler
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const result = authManager.login(email, password);
+            const result = await authManager.login(email, password);
 
             if (result.success) {
                 window.location.href = 'index.html';
