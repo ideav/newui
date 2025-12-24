@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки API - Web приложение</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <img src="images/logo.png" alt="Логотип" class="logo">
+        </div>
+        <div class="navbar-right">
+            <button id="theme-toggle" class="theme-toggle">🌙 Темная</button>
+        </div>
+    </nav>
+
+    <!-- Configuration Form -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Настройки API</h1>
+            <p>Настройте подключение к серверу API</p>
+
+            <form id="config-form">
+                <div class="form-group">
+                    <label for="api-host">Хост API</label>
+                    <input type="text" id="api-host" name="api-host" required placeholder="example.com">
+                    <small>Укажите хост без протокола (например: example.com)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-db">База данных</label>
+                    <input type="text" id="api-db" name="api-db" required placeholder="mydb">
+                    <small>Название базы данных для подключения</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="use-localstorage">
+                        Использовать режим localStorage (без API)
+                    </label>
+                    <small>Включите для работы в демо-режиме без подключения к серверу</small>
+                </div>
+
+                <button type="submit" class="btn-primary">Сохранить настройки</button>
+
+                <div class="auth-links">
+                    <a href="login.html">Вернуться к входу</a>
+                </div>
+            </form>
+
+            <div id="current-config" class="config-status" style="margin-top: 20px;">
+                <h3>Текущие настройки:</h3>
+                <p><strong>Хост:</strong> <span id="current-host">не настроен</span></p>
+                <p><strong>База данных:</strong> <span id="current-db">не настроена</span></p>
+                <p><strong>Режим:</strong> <span id="current-mode">localStorage</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const configForm = document.getElementById('config-form');
+            const apiHostInput = document.getElementById('api-host');
+            const apiDbInput = document.getElementById('api-db');
+            const useLocalStorageCheckbox = document.getElementById('use-localstorage');
+
+            // Load current configuration
+            const currentConfig = apiConfig.getConfig();
+            if (currentConfig.host) {
+                apiHostInput.value = currentConfig.host;
+                document.getElementById('current-host').textContent = currentConfig.host;
+            }
+            if (currentConfig.db) {
+                apiDbInput.value = currentConfig.db;
+                document.getElementById('current-db').textContent = currentConfig.db;
+            }
+
+            // Set mode display
+            const isConfigured = apiConfig.isConfigured();
+            document.getElementById('current-mode').textContent = isConfigured ? 'API' : 'localStorage';
+            useLocalStorageCheckbox.checked = !isConfigured;
+
+            // Handle localStorage checkbox
+            useLocalStorageCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    apiHostInput.disabled = true;
+                    apiDbInput.disabled = true;
+                } else {
+                    apiHostInput.disabled = false;
+                    apiDbInput.disabled = false;
+                }
+            });
+
+            // Handle form submission
+            configForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (useLocalStorageCheckbox.checked) {
+                    // Clear API configuration
+                    apiConfig.setConfig('', '');
+                    alert('Настройки сохранены. Приложение будет работать в режиме localStorage.');
+                } else {
+                    const host = apiHostInput.value.trim();
+                    const db = apiDbInput.value.trim();
+
+                    if (!host || !db) {
+                        alert('Пожалуйста, заполните все поля');
+                        return;
+                    }
+
+                    apiConfig.setConfig(host, db);
+                    alert('Настройки API сохранены успешно!');
+                }
+
+                // Reload to apply new settings
+                window.location.reload();
+            });
+        });
+    </script>
+</body>
+</html>
