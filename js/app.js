@@ -3,24 +3,32 @@ class ApiConfig {
     constructor() {
         this.host = localStorage.getItem('apiHost') || '';
         this.db = localStorage.getItem('apiDb') || '';
+        this.yandexClientId = localStorage.getItem('yandexClientId') || '';
     }
 
-    setConfig(host, db) {
+    setConfig(host, db, yandexClientId = '') {
         this.host = host;
         this.db = db;
+        this.yandexClientId = yandexClientId;
         localStorage.setItem('apiHost', host);
         localStorage.setItem('apiDb', db);
+        localStorage.setItem('yandexClientId', yandexClientId);
     }
 
     getConfig() {
         return {
             host: this.host,
-            db: this.db
+            db: this.db,
+            yandexClientId: this.yandexClientId
         };
     }
 
     isConfigured() {
         return this.host && this.db;
+    }
+
+    hasYandexAuth() {
+        return this.yandexClientId && this.yandexClientId.length > 0;
     }
 
     getBaseUrl() {
@@ -346,10 +354,107 @@ class AuthManager {
     }
 }
 
+// Yandex OAuth Authentication Manager
+class YandexAuthManager {
+    constructor(apiConfig, authManager) {
+        this.apiConfig = apiConfig;
+        this.authManager = authManager;
+        this.redirectUri = `${window.location.origin}/callback.html`;
+    }
+
+    isEnabled() {
+        return this.apiConfig.hasYandexAuth();
+    }
+
+    getAuthUrl() {
+        if (!this.isEnabled()) {
+            return null;
+        }
+
+        const params = new URLSearchParams({
+            response_type: 'token',
+            client_id: this.apiConfig.yandexClientId,
+            redirect_uri: this.redirectUri
+        });
+
+        return `https://oauth.yandex.ru/authorize?${params.toString()}`;
+    }
+
+    initiateLogin() {
+        const authUrl = this.getAuthUrl();
+        if (authUrl) {
+            window.location.href = authUrl;
+        } else {
+            alert('Yandex OAuth не настроен. Пожалуйста, настройте Client ID в настройках.');
+        }
+    }
+
+    async handleCallback() {
+        // Parse token from URL fragment
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const expiresIn = params.get('expires_in');
+
+        if (!accessToken) {
+            throw new Error('Не удалось получить токен доступа от Yandex');
+        }
+
+        // Get user info from Yandex
+        const userInfo = await this.getUserInfo(accessToken);
+
+        // Save user data
+        const user = {
+            user: userInfo.default_email || userInfo.login,
+            email: userInfo.default_email,
+            id: userInfo.id,
+            token: accessToken,
+            role: 'user',
+            yandexId: userInfo.id,
+            displayName: userInfo.display_name,
+            realName: userInfo.real_name,
+            avatarId: userInfo.default_avatar_id
+        };
+
+        this.authManager.saveUser(user);
+        localStorage.setItem('yandexAccessToken', accessToken);
+        localStorage.setItem('yandexTokenExpiry', Date.now() + (expiresIn * 1000));
+
+        return user;
+    }
+
+    async getUserInfo(accessToken) {
+        const response = await fetch('https://login.yandex.ru/info?format=json', {
+            method: 'GET',
+            headers: {
+                'Authorization': `OAuth ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ошибка получения данных пользователя: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    isTokenValid() {
+        const token = localStorage.getItem('yandexAccessToken');
+        const expiry = localStorage.getItem('yandexTokenExpiry');
+
+        if (!token || !expiry) {
+            return false;
+        }
+
+        return Date.now() < parseInt(expiry);
+    }
+}
+
 // Initialize theme and auth managers
 const themeManager = new ThemeManager();
 const apiConfig = new ApiConfig();
 const authManager = new AuthManager(apiConfig);
+const yandexAuth = new YandexAuthManager(apiConfig, authManager);
 
 // Theme toggle handler
 document.addEventListener('DOMContentLoaded', async () => {
@@ -363,6 +468,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication status with API if configured
     if (apiConfig.isConfigured()) {
         await authManager.checkAuth();
+    }
+
+    // Show/hide Yandex auth buttons based on configuration
+    if (yandexAuth.isEnabled()) {
+        const yandexLoginBtn = document.getElementById('yandex-login-btn');
+        const yandexRegisterBtn = document.getElementById('yandex-register-btn');
+        const loginDivider = document.getElementById('login-divider');
+        const registerDivider = document.getElementById('register-divider');
+
+        if (yandexLoginBtn) {
+            yandexLoginBtn.style.display = 'flex';
+            if (loginDivider) loginDivider.style.display = 'flex';
+        }
+
+        if (yandexRegisterBtn) {
+            yandexRegisterBtn.style.display = 'flex';
+            if (registerDivider) registerDivider.style.display = 'flex';
+        }
+    }
+
+    // Yandex login button handler
+    const yandexLoginBtn = document.getElementById('yandex-login-btn');
+    if (yandexLoginBtn) {
+        yandexLoginBtn.addEventListener('click', () => {
+            yandexAuth.initiateLogin();
+        });
+    }
+
+    // Yandex register button handler
+    const yandexRegisterBtn = document.getElementById('yandex-register-btn');
+    if (yandexRegisterBtn) {
+        yandexRegisterBtn.addEventListener('click', () => {
+            yandexAuth.initiateLogin();
+        });
     }
 
     // Update account info in navbar
