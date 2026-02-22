@@ -1,0 +1,104 @@
+# ============================================================================
+# SENSITIVE CONFIGURATION FILES
+# ============================================================================
+# Never commit files containing sensitive data like passwords, API keys, etc.
+
+# PHP configuration file with actual credentials
+config.php
+
+# Environment variables file with actual credentials
+.env
+
+# Backup copies of config files
+config.php.backup
+config.php.bak
+*.php.bak
+
+# ============================================================================
+# IDE AND EDITOR FILES
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PhpStorm / IntelliJ IDEA
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# NetBeans
+nbproject/
+
+# Eclipse
+.project
+.buildpath
+.settings/
+
+# ============================================================================
+# OPERATING SYSTEM FILES
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ============================================================================
+# TEMPORARY AND LOG FILES
+# ============================================================================
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache
+cache/
+*.cache
+
+# ============================================================================
+# DEPENDENCY AND PACKAGE FILES
+# ============================================================================
+
+# Composer
+vendor/
+composer.phar
+composer.lock
+
+# NPM
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ============================================================================
+# BUILD AND DEPLOYMENT FILES
+# ============================================================================
+
+# Build directories
+build/
+dist/
+
+# Deployment scripts with credentials
+deploy.sh
+deploy.php
