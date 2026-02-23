@@ -3,9 +3,11 @@
  * Main Routing Module (index.php)
  *
  * This is the main entry point for the application that handles:
- * 1. Static file serving - Files that exist on disk (e.g., /terms.html, /index.html)
- * 2. User database access - Routes like /{db_name}/{action} that require authentication
- * 3. API methods - JSON responses that also require authentication
+ * 1. User database access - Routes like /{db_name}/{action} that require authentication
+ * 2. API methods - JSON responses that also require authentication
+ *
+ * Note: Static files (HTML, CSS, JS, images, etc.) are served directly by Apache
+ * via .htaccess rules - index.php is only invoked when no matching file or directory exists.
  *
  * When a URL is not found (ЧПУ - clean URLs), Apache routes to this file
  * which then determines what action to take based on the path and user context.
@@ -47,38 +49,6 @@ $queryString = $parsedUrl['query'] ?? '';
 $pathParts = array_values(array_filter(explode('/', trim($path, '/'))));
 
 // ============================================================================
-// STATIC FILE DETECTION
-// ============================================================================
-
-/**
- * Check if the request is for a static file that exists on disk
- *
- * @param string $path The request path
- * @return string|false The full file path if exists, false otherwise
- */
-function isStaticFile($path) {
-    $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? __DIR__;
-
-    // Normalize path (remove any directory traversal attempts)
-    $safePath = str_replace(['../', '..\\'], '', $path);
-
-    // Check common static file extensions
-    $staticExtensions = ['html', 'htm', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'pdf', 'txt', 'xml', 'json'];
-
-    $ext = strtolower(pathinfo($safePath, PATHINFO_EXTENSION));
-
-    if (in_array($ext, $staticExtensions)) {
-        $fullPath = $documentRoot . '/' . ltrim($safePath, '/');
-
-        if (file_exists($fullPath) && is_file($fullPath)) {
-            return $fullPath;
-        }
-    }
-
-    return false;
-}
-
-// ============================================================================
 // ROUTE DETECTION
 // ============================================================================
 
@@ -89,20 +59,10 @@ function isStaticFile($path) {
  * @return array Route information [type, db, action, params]
  */
 function detectRoute($pathParts) {
-    // Empty path or root - serve index.html
-    if (empty($pathParts) || (count($pathParts) === 1 && $pathParts[0] === '')) {
-        return [
-            'type' => 'static',
-            'file' => 'index.html',
-            'db' => null,
-            'action' => null
-        ];
-    }
+    // First part is the database name
+    $firstPart = $pathParts[0] ?? '';
 
-    // First part could be a database name or a static file
-    $firstPart = $pathParts[0];
-
-    // API routes - they start with 'api' or contain specific API commands
+    // API routes contain specific API commands as the second path segment
     $apiCommands = ['_m_new', '_m_save', '_m_set', '_m_del', '_m_move', '_m_up', '_m_ord', '_m_id',
                     '_d_new', '_d_save', '_d_del', '_d_req', '_d_del_req', '_d_ref', '_d_alias',
                     '_d_null', '_d_multi', '_d_attrs', '_d_up', '_d_ord',
@@ -121,7 +81,7 @@ function detectRoute($pathParts) {
 
     // Check if the path looks like a database access: /{db_name}/{action}
     // Database names should be alphanumeric
-    if (preg_match('/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/', $firstPart)) {
+    if (!empty($firstPart) && preg_match('/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/', $firstPart)) {
         // This is likely a database access
         $action = $pathParts[1] ?? 'info';  // Default action is 'info'
 
@@ -133,12 +93,12 @@ function detectRoute($pathParts) {
         ];
     }
 
-    // If nothing matches, treat as static file request (will 404 if not found)
+    // If nothing matches, return 404
     return [
-        'type' => 'static',
-        'file' => implode('/', $pathParts),
+        'type' => 'not_found',
         'db' => null,
-        'action' => null
+        'action' => null,
+        'params' => []
     ];
 }
 
@@ -556,45 +516,8 @@ function notFoundResponse($json = false) {
 // Detect route type
 $route = detectRoute($pathParts);
 
-// Handle static files
-if ($route['type'] === 'static') {
-    $staticFile = isStaticFile($path);
-
-    if ($staticFile) {
-        // Let Apache serve the file (should not reach here with proper .htaccess)
-        $ext = strtolower(pathinfo($staticFile, PATHINFO_EXTENSION));
-        $mimeTypes = [
-            'html' => 'text/html',
-            'htm' => 'text/html',
-            'css' => 'text/css',
-            'js' => 'application/javascript',
-            'json' => 'application/json',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'gif' => 'image/gif',
-            'svg' => 'image/svg+xml',
-            'ico' => 'image/x-icon',
-            'pdf' => 'application/pdf',
-            'txt' => 'text/plain',
-            'xml' => 'application/xml'
-        ];
-
-        header('Content-Type: ' . ($mimeTypes[$ext] ?? 'application/octet-stream'));
-        readfile($staticFile);
-        exit;
-    }
-
-    // Check for index.html as default
-    if (empty($pathParts) || $route['file'] === 'index.html') {
-        $indexFile = __DIR__ . '/index.html';
-        if (file_exists($indexFile)) {
-            header('Content-Type: text/html; charset=utf-8');
-            readfile($indexFile);
-            exit;
-        }
-    }
-
+// Handle unrecognized routes
+if ($route['type'] === 'not_found') {
     notFoundResponse();
 }
 
