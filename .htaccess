@@ -1,0 +1,118 @@
+# Apache Configuration for Clean URLs (ЧПУ)
+#
+# This .htaccess file enables clean URLs by routing all requests
+# that don't match existing files through index.php
+#
+# Requirements:
+# - mod_rewrite must be enabled in Apache
+# - AllowOverride All must be set in Apache config
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Set the base directory (adjust if app is in a subdirectory)
+# RewriteBase /
+
+# ============================================================================
+# SECURITY HEADERS
+# ============================================================================
+
+# Prevent directory listing
+Options -Indexes
+
+# Prevent access to hidden files (starting with .)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Prevent access to sensitive files
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+    Require all denied
+</FilesMatch>
+
+# Deny access to PHP files in certain directories
+<FilesMatch "^(config\.php|config\.example\.php)$">
+    Require all denied
+</FilesMatch>
+
+# ============================================================================
+# STATIC FILE HANDLING
+# ============================================================================
+
+# If the request is for a static file that exists, serve it directly
+# This includes: HTML, CSS, JS, images, fonts, etc.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# If the request is for an existing directory with index.html, serve it
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^(.*)$ $1/index.html [L]
+
+# ============================================================================
+# CLEAN URL ROUTING (ЧПУ)
+# ============================================================================
+
+# Route all other requests to index.php
+# This handles:
+# - /{db_name}/{action} -> Database routes requiring authentication
+# - /{db_name}/_m_new, etc. -> API routes
+# - Any other non-file requests
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# ============================================================================
+# DEFAULT DOCUMENT
+# ============================================================================
+
+# Set default index files
+DirectoryIndex index.html index.php
+
+# ============================================================================
+# PERFORMANCE & CACHING
+# ============================================================================
+
+# Enable compression for text-based files
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+# Set cache headers for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+</IfModule>
+
+# ============================================================================
+# PHP SETTINGS (if allowed)
+# ============================================================================
+
+<IfModule mod_php.c>
+    # Set default charset
+    php_value default_charset "UTF-8"
+
+    # Security settings
+    php_flag display_errors Off
+    php_flag log_errors On
+
+    # Session settings
+    php_value session.cookie_httponly 1
+    php_value session.use_only_cookies 1
+</IfModule>
+
+# ============================================================================
+# ERROR DOCUMENTS
+# ============================================================================
+
+ErrorDocument 404 /index.php
+ErrorDocument 403 /index.php
