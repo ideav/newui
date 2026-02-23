@@ -4,22 +4,26 @@ class ApiConfig {
         this.host = localStorage.getItem('apiHost') || '';
         this.db = localStorage.getItem('apiDb') || '';
         this.yandexClientId = localStorage.getItem('yandexClientId') || '';
+        this.googleClientId = localStorage.getItem('googleClientId') || '';
     }
 
-    setConfig(host, db, yandexClientId = '') {
+    setConfig(host, db, yandexClientId = '', googleClientId = '') {
         this.host = host;
         this.db = db;
         this.yandexClientId = yandexClientId;
+        this.googleClientId = googleClientId;
         localStorage.setItem('apiHost', host);
         localStorage.setItem('apiDb', db);
         localStorage.setItem('yandexClientId', yandexClientId);
+        localStorage.setItem('googleClientId', googleClientId);
     }
 
     getConfig() {
         return {
             host: this.host,
             db: this.db,
-            yandexClientId: this.yandexClientId
+            yandexClientId: this.yandexClientId,
+            googleClientId: this.googleClientId
         };
     }
 
@@ -29,6 +33,10 @@ class ApiConfig {
 
     hasYandexAuth() {
         return this.yandexClientId && this.yandexClientId.length > 0;
+    }
+
+    hasGoogleAuth() {
+        return this.googleClientId && this.googleClientId.length > 0;
     }
 
     getBaseUrl() {
@@ -450,11 +458,109 @@ class YandexAuthManager {
     }
 }
 
+// Google OAuth Authentication Manager
+class GoogleAuthManager {
+    constructor(apiConfig, authManager) {
+        this.apiConfig = apiConfig;
+        this.authManager = authManager;
+        this.redirectUri = `${window.location.origin}/callback.html`;
+    }
+
+    isEnabled() {
+        return this.apiConfig.hasGoogleAuth();
+    }
+
+    getAuthUrl() {
+        if (!this.isEnabled()) {
+            return null;
+        }
+
+        const params = new URLSearchParams({
+            response_type: 'token',
+            client_id: this.apiConfig.googleClientId,
+            redirect_uri: this.redirectUri,
+            scope: 'email profile',
+            include_granted_scopes: 'true'
+        });
+
+        return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    }
+
+    initiateLogin() {
+        const authUrl = this.getAuthUrl();
+        if (authUrl) {
+            window.location.href = authUrl;
+        } else {
+            alert('Google OAuth не настроен. Пожалуйста, настройте Client ID в настройках.');
+        }
+    }
+
+    async handleCallback() {
+        // Parse token from URL fragment
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const expiresIn = params.get('expires_in');
+
+        if (!accessToken) {
+            throw new Error('Не удалось получить токен доступа от Google');
+        }
+
+        // Get user info from Google
+        const userInfo = await this.getUserInfo(accessToken);
+
+        // Save user data
+        const user = {
+            user: userInfo.email,
+            email: userInfo.email,
+            id: userInfo.id,
+            token: accessToken,
+            role: 'user',
+            googleId: userInfo.id,
+            displayName: userInfo.name,
+            avatarUrl: userInfo.picture
+        };
+
+        this.authManager.saveUser(user);
+        localStorage.setItem('googleAccessToken', accessToken);
+        localStorage.setItem('googleTokenExpiry', Date.now() + (expiresIn * 1000));
+
+        return user;
+    }
+
+    async getUserInfo(accessToken) {
+        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ошибка получения данных пользователя: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    isTokenValid() {
+        const token = localStorage.getItem('googleAccessToken');
+        const expiry = localStorage.getItem('googleTokenExpiry');
+
+        if (!token || !expiry) {
+            return false;
+        }
+
+        return Date.now() < parseInt(expiry);
+    }
+}
+
 // Initialize theme and auth managers
 const themeManager = new ThemeManager();
 const apiConfig = new ApiConfig();
 const authManager = new AuthManager(apiConfig);
 const yandexAuth = new YandexAuthManager(apiConfig, authManager);
+const googleAuth = new GoogleAuthManager(apiConfig, authManager);
 
 // Theme toggle handler
 document.addEventListener('DOMContentLoaded', async () => {
@@ -470,22 +576,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         await authManager.checkAuth();
     }
 
-    // Show/hide Yandex auth buttons based on configuration
+    // Show/hide OAuth auth buttons based on configuration
+    const loginDivider = document.getElementById('login-divider');
+    const registerDivider = document.getElementById('register-divider');
+    let hasAnyOAuth = false;
+
+    // Google OAuth buttons
+    if (googleAuth.isEnabled()) {
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const googleRegisterBtn = document.getElementById('google-register-btn');
+
+        if (googleLoginBtn) {
+            googleLoginBtn.style.display = 'flex';
+            hasAnyOAuth = true;
+        }
+
+        if (googleRegisterBtn) {
+            googleRegisterBtn.style.display = 'flex';
+            hasAnyOAuth = true;
+        }
+    }
+
+    // Yandex OAuth buttons
     if (yandexAuth.isEnabled()) {
         const yandexLoginBtn = document.getElementById('yandex-login-btn');
         const yandexRegisterBtn = document.getElementById('yandex-register-btn');
-        const loginDivider = document.getElementById('login-divider');
-        const registerDivider = document.getElementById('register-divider');
 
         if (yandexLoginBtn) {
             yandexLoginBtn.style.display = 'flex';
-            if (loginDivider) loginDivider.style.display = 'flex';
+            hasAnyOAuth = true;
         }
 
         if (yandexRegisterBtn) {
             yandexRegisterBtn.style.display = 'flex';
-            if (registerDivider) registerDivider.style.display = 'flex';
+            hasAnyOAuth = true;
         }
+    }
+
+    // Show dividers if any OAuth is enabled
+    if (hasAnyOAuth) {
+        if (loginDivider) loginDivider.style.display = 'flex';
+        if (registerDivider) registerDivider.style.display = 'flex';
+    }
+
+    // Google login button handler
+    const googleLoginBtn = document.getElementById('google-login-btn');
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', () => {
+            googleAuth.initiateLogin();
+        });
+    }
+
+    // Google register button handler
+    const googleRegisterBtn = document.getElementById('google-register-btn');
+    if (googleRegisterBtn) {
+        googleRegisterBtn.addEventListener('click', () => {
+            googleAuth.initiateLogin();
+        });
     }
 
     // Yandex login button handler
