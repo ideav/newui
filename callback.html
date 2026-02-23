@@ -20,7 +20,7 @@
     <!-- Processing Message -->
     <div class="auth-container">
         <div class="auth-card">
-            <h1>Авторизация через Яндекс ID</h1>
+            <h1 id="auth-title">Авторизация</h1>
             <p id="status-message">Обработка авторизации...</p>
             <div style="text-align: center; margin-top: 2rem;">
                 <div style="border: 4px solid var(--border-color); border-top: 4px solid var(--button-primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
@@ -39,14 +39,49 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const statusMessage = document.getElementById('status-message');
+            const authTitle = document.getElementById('auth-title');
+
+            // Determine which OAuth provider the callback is from
+            // We check localStorage for pending OAuth state
+            const pendingOAuthProvider = localStorage.getItem('pendingOAuthProvider') || 'unknown';
 
             try {
-                // Check if this is a callback from Yandex OAuth
+                // Check if this is a callback from OAuth
                 if (window.location.hash) {
                     statusMessage.textContent = 'Получение информации о пользователе...';
 
-                    // Handle the OAuth callback
-                    const user = await yandexAuth.handleCallback();
+                    let user;
+
+                    // Try to determine the provider from the callback URL or stored state
+                    // Google includes 'scope' in the hash, Yandex typically doesn't
+                    const hash = window.location.hash.substring(1);
+                    const params = new URLSearchParams(hash);
+                    const hasScope = params.has('scope');
+
+                    // Try Google first if it seems like a Google callback or if Google is configured
+                    if ((hasScope || pendingOAuthProvider === 'google') && googleAuth.isEnabled()) {
+                        try {
+                            authTitle.textContent = 'Авторизация через Google';
+                            user = await googleAuth.handleCallback();
+                            localStorage.removeItem('pendingOAuthProvider');
+                        } catch (googleError) {
+                            // If Google fails, try Yandex
+                            if (yandexAuth.isEnabled()) {
+                                authTitle.textContent = 'Авторизация через Яндекс ID';
+                                user = await yandexAuth.handleCallback();
+                                localStorage.removeItem('pendingOAuthProvider');
+                            } else {
+                                throw googleError;
+                            }
+                        }
+                    } else if (yandexAuth.isEnabled()) {
+                        // Try Yandex
+                        authTitle.textContent = 'Авторизация через Яндекс ID';
+                        user = await yandexAuth.handleCallback();
+                        localStorage.removeItem('pendingOAuthProvider');
+                    } else {
+                        throw new Error('Нет доступных OAuth провайдеров');
+                    }
 
                     statusMessage.textContent = 'Авторизация успешна! Перенаправление...';
 
@@ -61,6 +96,7 @@
                     const errorDescription = urlParams.get('error_description');
 
                     statusMessage.textContent = `Ошибка авторизации: ${errorDescription || error}`;
+                    localStorage.removeItem('pendingOAuthProvider');
 
                     setTimeout(() => {
                         window.location.href = 'login.html';
@@ -68,6 +104,7 @@
                 } else {
                     // No OAuth data found
                     statusMessage.textContent = 'Нет данных авторизации. Перенаправление на страницу входа...';
+                    localStorage.removeItem('pendingOAuthProvider');
 
                     setTimeout(() => {
                         window.location.href = 'login.html';
@@ -76,6 +113,7 @@
             } catch (error) {
                 console.error('Callback handling error:', error);
                 statusMessage.textContent = `Ошибка: ${error.message}`;
+                localStorage.removeItem('pendingOAuthProvider');
 
                 setTimeout(() => {
                     window.location.href = 'login.html';

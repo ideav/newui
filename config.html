@@ -37,6 +37,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="google-client-id">Google OAuth Client ID</label>
+                    <input type="text" id="google-client-id" name="google-client-id" placeholder="Введите Client ID из Google Cloud Console">
+                    <small>ID приложения из <a href="https://console.developers.google.com/" target="_blank">Google Cloud Console</a></small>
+                </div>
+
+                <div class="form-group">
                     <label for="yandex-client-id">Yandex OAuth Client ID</label>
                     <input type="text" id="yandex-client-id" name="yandex-client-id" placeholder="Введите Client ID из Yandex OAuth">
                     <small>ID приложения из <a href="https://oauth.yandex.com/" target="_blank">Yandex OAuth</a></small>
@@ -61,6 +67,7 @@
                 <h3>Текущие настройки:</h3>
                 <p><strong>Хост:</strong> <span id="current-host">не настроен</span></p>
                 <p><strong>База данных:</strong> <span id="current-db">не настроена</span></p>
+                <p><strong>Google Client ID:</strong> <span id="current-google-id">не настроен</span></p>
                 <p><strong>Yandex Client ID:</strong> <span id="current-yandex-id">не настроен</span></p>
                 <p><strong>Режим:</strong> <span id="current-mode">localStorage</span></p>
             </div>
@@ -73,6 +80,7 @@
             const configForm = document.getElementById('config-form');
             const apiHostInput = document.getElementById('api-host');
             const apiDbInput = document.getElementById('api-db');
+            const googleClientIdInput = document.getElementById('google-client-id');
             const yandexClientIdInput = document.getElementById('yandex-client-id');
             const useLocalStorageCheckbox = document.getElementById('use-localstorage');
 
@@ -85,6 +93,10 @@
             if (currentConfig.db) {
                 apiDbInput.value = currentConfig.db;
                 document.getElementById('current-db').textContent = currentConfig.db;
+            }
+            if (currentConfig.googleClientId) {
+                googleClientIdInput.value = currentConfig.googleClientId;
+                document.getElementById('current-google-id').textContent = currentConfig.googleClientId;
             }
             if (currentConfig.yandexClientId) {
                 yandexClientIdInput.value = currentConfig.yandexClientId;
@@ -101,10 +113,12 @@
                 if (e.target.checked) {
                     apiHostInput.disabled = true;
                     apiDbInput.disabled = true;
+                    googleClientIdInput.disabled = true;
                     yandexClientIdInput.disabled = true;
                 } else {
                     apiHostInput.disabled = false;
                     apiDbInput.disabled = false;
+                    googleClientIdInput.disabled = false;
                     yandexClientIdInput.disabled = false;
                 }
             });
@@ -115,11 +129,12 @@
 
                 if (useLocalStorageCheckbox.checked) {
                     // Clear API configuration
-                    apiConfig.setConfig('', '', '');
+                    apiConfig.setConfig('', '', '', '');
                     alert('Настройки сохранены. Приложение будет работать в режиме localStorage.');
                 } else {
                     const host = apiHostInput.value.trim();
                     const db = apiDbInput.value.trim();
+                    const googleClientId = googleClientIdInput.value.trim();
                     const yandexClientId = yandexClientIdInput.value.trim();
 
                     if (!host || !db) {
@@ -127,7 +142,7 @@
                         return;
                     }
 
-                    apiConfig.setConfig(host, db, yandexClientId);
+                    apiConfig.setConfig(host, db, yandexClientId, googleClientId);
                     alert('Настройки API сохранены успешно!');
                 }
 
