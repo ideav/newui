@@ -413,6 +413,45 @@ body {
     background-color: #f5c000;
 }
 
+/* OAuth buttons container for compact layout */
+.oauth-buttons-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Compact OAuth button styles */
+.btn-oauth-compact {
+    width: auto;
+    flex: 1;
+    padding: 0.625rem 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.btn-oauth-compact svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.btn-oauth-compact .btn-text {
+    white-space: nowrap;
+}
+
+/* Responsive adjustments for compact buttons */
+@media (max-width: 400px) {
+    .btn-oauth-compact .btn-text {
+        display: none;
+    }
+
+    .btn-oauth-compact {
+        padding: 0.625rem;
+        justify-content: center;
+    }
+}
+
 /* Logout button */
 .btn-logout {
     background: none;
