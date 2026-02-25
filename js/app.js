@@ -463,11 +463,19 @@ class GoogleAuthManager {
     constructor(apiConfig, authManager) {
         this.apiConfig = apiConfig;
         this.authManager = authManager;
-        this.redirectUri = `${window.location.origin}/callback.html`;
     }
 
     isEnabled() {
         return this.apiConfig.hasGoogleAuth();
+    }
+
+    getRedirectUri() {
+        // Use the Integram backend callback endpoint (/auth.asp) if API is configured,
+        // otherwise fall back to local callback.html
+        if (this.apiConfig.isConfigured()) {
+            return `https://${this.apiConfig.host}/auth.asp`;
+        }
+        return `${window.location.origin}/callback.html`;
     }
 
     getAuthUrl() {
@@ -475,20 +483,22 @@ class GoogleAuthManager {
             return null;
         }
 
-        const params = new URLSearchParams({
-            response_type: 'token',
-            client_id: this.apiConfig.googleClientId,
-            redirect_uri: this.redirectUri,
-            scope: 'email profile',
-            include_granted_scopes: 'true'
-        });
+        const redirectUri = this.getRedirectUri();
+        // Pass the database name as state for multi-tenant support (as integram.io does)
+        const state = this.apiConfig.db ? encodeURIComponent(this.apiConfig.db) : '';
+        const stateParam = state ? `&state=${state}` : '';
 
-        return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+        return `https://accounts.google.com/o/oauth2/auth?client_id=${this.apiConfig.googleClientId}`
+            + `&redirect_uri=${encodeURIComponent(redirectUri)}`
+            + `&response_type=code`
+            + `&scope=https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile`
+            + stateParam;
     }
 
     initiateLogin() {
         const authUrl = this.getAuthUrl();
         if (authUrl) {
+            localStorage.setItem('pendingOAuthProvider', 'google');
             window.location.href = authUrl;
         } else {
             alert('Google OAuth не настроен. Пожалуйста, настройте Client ID в настройках.');
@@ -496,51 +506,25 @@ class GoogleAuthManager {
     }
 
     async handleCallback() {
-        // Parse token from URL fragment
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const expiresIn = params.get('expires_in');
+        // Authorization code flow: code is in URL query params, not hash
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
 
-        if (!accessToken) {
-            throw new Error('Не удалось получить токен доступа от Google');
+        if (!code) {
+            throw new Error('Не удалось получить код авторизации от Google');
         }
 
-        // Get user info from Google
-        const userInfo = await this.getUserInfo(accessToken);
-
-        // Save user data
+        // In authorization code flow, the backend (/auth.asp) handles token exchange.
+        // This callback is only reached when using the local callback.html fallback.
+        // Return a placeholder user indicating backend should handle the auth.
         const user = {
-            user: userInfo.email,
-            email: userInfo.email,
-            id: userInfo.id,
-            token: accessToken,
+            user: 'google_user',
             role: 'user',
-            googleId: userInfo.id,
-            displayName: userInfo.name,
-            avatarUrl: userInfo.picture
+            googleAuthCode: code
         };
 
         this.authManager.saveUser(user);
-        localStorage.setItem('googleAccessToken', accessToken);
-        localStorage.setItem('googleTokenExpiry', Date.now() + (expiresIn * 1000));
-
         return user;
-    }
-
-    async getUserInfo(accessToken) {
-        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Ошибка получения данных пользователя: ${response.status}`);
-        }
-
-        return await response.json();
     }
 
     isTokenValid() {
