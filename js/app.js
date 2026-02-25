@@ -766,32 +766,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Handle authenticated and non-authenticated states on index page
+    // Protect authenticated pages
+    const protectedPages = ['index.html', '/'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    if (currentPage === 'index.html' || currentPage === '') {
-        const accountInfo = document.querySelector('.account-info');
-        const welcomeGuest = document.getElementById('welcome-guest');
-        const welcomeUser = document.getElementById('welcome-user');
-
-        if (authManager.isAuthenticated()) {
-            // Show authenticated user content
-            if (accountInfo) accountInfo.style.display = 'flex';
-            if (welcomeGuest) welcomeGuest.style.display = 'none';
-            if (welcomeUser) welcomeUser.style.display = 'block';
-
-            // Show logout button for authenticated users
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) logoutBtn.style.display = 'block';
-        } else {
-            // Show welcome/registration content for guests
-            if (accountInfo) accountInfo.style.display = 'none';
-            if (welcomeGuest) welcomeGuest.style.display = 'block';
-            if (welcomeUser) welcomeUser.style.display = 'none';
-
-            // Hide logout button for guests
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) logoutBtn.style.display = 'none';
+    if (protectedPages.some(page => currentPage.includes(page) || currentPage === '')) {
+        if (!authManager.isAuthenticated() && currentPage !== 'login.html' && currentPage !== 'register.html') {
+            const accountInfo = document.querySelector('.account-info');
+            if (accountInfo) {
+                // Only redirect if we're on the main page and not authenticated
+                if (currentPage === 'index.html' || currentPage === '') {
+                    window.location.href = 'login.html';
+                }
+            }
         }
     }
 });

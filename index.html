@@ -14,43 +14,16 @@
         </div>
         <div class="navbar-right">
             <button id="theme-toggle" class="theme-toggle">🌙 Темная</button>
-            <div class="account-info" style="display: none;">
+            <div class="account-info">
                 <div id="account-avatar" class="account-avatar">U</div>
                 <span id="account-email" class="account-email">user@example.com</span>
             </div>
-            <button id="logout-btn" class="btn-logout" style="display: none;">Выйти</button>
+            <button id="logout-btn" class="btn-logout">Выйти</button>
         </div>
     </nav>
 
-    <!-- Welcome Content for Guests -->
-    <div id="welcome-guest" class="auth-container" style="display: none;">
-        <div class="auth-card">
-            <h1>Добро пожаловать!</h1>
-            <p>Зарегистрируйтесь или войдите для доступа к приложению</p>
-
-            <button type="button" id="yandex-index-btn" class="btn-yandex" style="display: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm3.9 16.2h-2.6l-2.5-7.1h-.1c.1.8.1 1.5.1 2.2v4.9H8.1V7.8h2.6l2.5 7h.1c0-.7-.1-1.4-.1-2.1V7.8h2.7v8.4z"/>
-                </svg>
-                Войти через Яндекс ID
-            </button>
-
-            <div class="auth-divider" id="index-divider" style="display: none;">или</div>
-
-            <a href="register.html" class="btn-primary" style="display: block; text-align: center; text-decoration: none; margin-bottom: 1rem;">
-                Зарегистрироваться по email
-            </a>
-
-            <div class="auth-links">
-                Уже есть аккаунт? <a href="login.html">Войти</a>
-                <br>
-                <a href="config.html">Настройки API</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content for Authenticated Users -->
-    <main id="welcome-user" class="main-content" style="display: none;">
+    <!-- Main Content -->
+    <main class="main-content">
         <div class="dashboard">
             <h1>Добро пожаловать!</h1>
             <p>Вы успешно вошли в систему. Это основная страница приложения.</p>
@@ -58,24 +31,5 @@
     </main>
 
     <script src="js/app.js"></script>
-    <script>
-        // Handle Yandex button visibility on index page
-        document.addEventListener('DOMContentLoaded', () => {
-            if (yandexAuth && yandexAuth.isEnabled()) {
-                const yandexIndexBtn = document.getElementById('yandex-index-btn');
-                const indexDivider = document.getElementById('index-divider');
-                if (yandexIndexBtn) yandexIndexBtn.style.display = 'flex';
-                if (indexDivider) indexDivider.style.display = 'flex';
-            }
-
-            // Yandex button click handler on index page
-            const yandexIndexBtn = document.getElementById('yandex-index-btn');
-            if (yandexIndexBtn) {
-                yandexIndexBtn.addEventListener('click', () => {
-                    yandexAuth.initiateLogin();
-                });
-            }
-        });
-    </script>
 </body>
 </html>
