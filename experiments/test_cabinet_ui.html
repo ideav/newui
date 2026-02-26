@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet UI Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/cabinet.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="../index.html">
+                <img src="../images/logo.png" alt="Логотип" class="logo">
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button id="lang-toggle" class="theme-toggle" title="Switch language">RU</button>
+            <button id="theme-toggle" class="theme-toggle">🌙 <span>Темная</span></button>
+            <div class="account-info">
+                <div id="account-avatar" class="account-avatar">D</div>
+                <span id="account-email" class="account-email">drynny@mail.ru</span>
+            </div>
+            <button id="logout-btn" class="btn-logout">Выйти</button>
+        </div>
+    </nav>
+
+    <!-- Cabinet Layout -->
+    <div class="cabinet-layout">
+        <!-- Left Sidebar Menu -->
+        <aside class="cabinet-sidebar">
+            <nav class="cabinet-menu">
+                <button class="cabinet-menu-item active" data-section="profile" onclick="showSection('profile')">
+                    <span class="menu-icon">👤</span>
+                    <span>Профиль</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="balance" onclick="showSection('balance')">
+                    <span class="menu-icon">💰</span>
+                    <span>Баланс</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="databases" onclick="showSection('databases')">
+                    <span class="menu-icon">🗄️</span>
+                    <span>Базы данных</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="access" onclick="showSection('access')">
+                    <span class="menu-icon">🔑</span>
+                    <span>Доступы</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="bonuses" onclick="showSection('bonuses')">
+                    <span class="menu-icon">🎁</span>
+                    <span>Бонусы</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="referrals" onclick="showSection('referrals')">
+                    <span class="menu-icon">👥</span>
+                    <span>Партнерская программа</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="cabinet-content">
+            <!-- Profile Section -->
+            <section id="section-profile" class="cabinet-section">
+                <h1>Профиль</h1>
+
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label for="profile-name">Имя</label>
+                        <input type="text" id="profile-name" name="name" placeholder="Введите ваше имя">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-phone">Телефон</label>
+                        <input type="tel" id="profile-phone" name="phone" placeholder="+7 (xxx) xxx-xx-xx">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" name="email" value="drynny@mail.ru" readonly disabled>
+                        <span class="field-hint">Email нельзя изменить</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-about">Обо мне</label>
+                        <textarea id="profile-about" name="notes" rows="4" placeholder="Расскажите о себе"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Фото</label>
+                        <div class="photo-upload">
+                            <div id="profile-photo-preview" class="photo-preview">
+                                <span class="photo-placeholder">📷</span>
+                            </div>
+                            <button type="button" class="btn-secondary">Загрузить фото</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-primary">Сохранить изменения</button>
+                </div>
+
+                <!-- Tariff Info -->
+                <div class="tariff-section">
+                    <h2>Информация о тарифе</h2>
+                    <div class="tariff-info">
+                        <p class="tariff-current">
+                            <span>Ваш тариф</span> — <strong>Free</strong>
+                        </p>
+                        <p class="tariff-next-charge">
+                            <span>Следующее списание</span> <strong>27 февраля 2026</strong>
+                        </p>
+                        <p class="tariff-description">
+                            Списание по тарифному плану производится один раз в месяц, при этом сбрасываются счетчики ресурсов всех ваших баз. Если расход ресурсов не укладывается в лимит плана, то для продолжения работы вам необходимо повысить план.
+                        </p>
+                        <div class="usage-info">
+                            <p>
+                                Сейчас вы использовали <strong>1010.00</strong> ед. ресурсов или <strong>5.05%</strong> от лимита бесплатного тарифного плана в <strong>20000</strong> ед.
+                            </p>
+                            <div class="usage-bar">
+                                <div class="usage-bar-fill" style="width: 5.05%;"></div>
+                            </div>
+                        </div>
+                        <div class="plan-change">
+                            <p>Для смены плана требуется иметь достаточное количество средств на счете:</p>
+                            <select class="plan-select">
+                                <option value="free" selected>Free</option>
+                                <option value="startup">Startup</option>
+                                <option value="scalable">Scalable</option>
+                            </select>
+                            <button type="button" class="btn-secondary">Сменить план</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Balance Section -->
+            <section id="section-balance" class="cabinet-section" style="display: none;">
+                <h1>Баланс</h1>
+                <div class="balance-info">
+                    <p>Средства вашего счета расходуются на оплату тарифного плана. Вы можете пополнить счет банковской картой или переводом.</p>
+                    <div class="balance-current">
+                        <span>Текущий баланс:</span> <strong>0</strong> <span>руб.</span>
+                    </div>
+                    <div class="usage-today">
+                        <p>На сегодня вы использовали около <strong>1010.00</strong> ед. ресурсов или <strong>5.05%</strong> от лимита.</p>
+                    </div>
+                </div>
+                <div class="balance-history">
+                    <h2>История операций</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Сумма</th>
+                                <th>Примечание</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" class="empty-message">Нет операций</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="balance-actions">
+                    <button type="button" class="btn-primary">Пополнить счет</button>
+                </div>
+            </section>
+
+            <!-- Databases Section -->
+            <section id="section-databases" class="cabinet-section" style="display: none;">
+                <h1>Базы данных</h1>
+                <p class="section-description">Список моих баз данных</p>
+                <div class="databases-list">
+                    <div class="database-card">
+                        <div class="database-info">
+                            <div class="database-name">pdn</div>
+                            <div class="database-id">ID: 230234</div>
+                            <div class="database-stats">
+                                <span class="database-stat">Шаблон: <strong>ru</strong></span>
+                                <span class="database-stat">Записей: <strong>1010</strong></span>
+                                <span class="database-stat">Оплачено до: <strong>27 февраля 2026</strong></span>
+                            </div>
+                        </div>
+                        <div class="database-actions">
+                            <button type="button" class="btn-secondary btn-small">Открыть</button>
+                        </div>
+                    </div>
+                    <div class="database-card">
+                        <div class="database-info">
+                            <div class="database-name">f3p</div>
+                            <div class="database-id">ID: 230969</div>
+                            <div class="database-stats">
+                                <span class="database-stat">Шаблон: <strong>mo</strong></span>
+                                <span class="database-stat">Записей: <strong>0</strong></span>
+                                <span class="database-stat">Оплачено до: <strong>27 февраля 2026</strong></span>
+                            </div>
+                        </div>
+                        <div class="database-actions">
+                            <button type="button" class="btn-secondary btn-small">Открыть</button>
+                        </div>
+                    </div>
+                    <div class="database-card">
+                        <div class="database-info">
+                            <div class="database-name">drynny</div>
+                            <div class="database-id">ID: 217882</div>
+                            <div class="database-description">Тестовая база, создана при регистрации</div>
+                            <div class="database-stats">
+                                <span class="database-stat">Шаблон: <strong>ru</strong></span>
+                                <span class="database-stat">Записей: <strong>0</strong></span>
+                                <span class="database-stat">Оплачено до: <strong>27 февраля 2026</strong></span>
+                            </div>
+                        </div>
+                        <div class="database-actions">
+                            <button type="button" class="btn-secondary btn-small">Открыть</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Access Section -->
+            <section id="section-access" class="cabinet-section" style="display: none;">
+                <h1>Доступы</h1>
+                <p class="section-description">Список Баз данных с назначенными на них пользователями</p>
+                <p class="empty-message">Нет данных о доступах</p>
+            </section>
+
+            <!-- Bonuses Section -->
+            <section id="section-bonuses" class="cabinet-section" style="display: none;">
+                <h1>Бонусы</h1>
+                <div class="bonuses-info">
+                    <p>Вы получаете бонусы при регистрации и при совершении некоторых действий.</p>
+                    <div class="bonuses-current">
+                        <span>Текущие бонусы:</span> <strong>0</strong>
+                    </div>
+                    <p>Бонусы можно конвертировать в валюту вашего депозита: 1 бонус = 1 рубль.</p>
+                </div>
+                <div class="bonuses-actions">
+                    <button type="button" class="btn-primary">Конвертировать бонусы</button>
+                </div>
+            </section>
+
+            <!-- Referrals Section -->
+            <section id="section-referrals" class="cabinet-section" style="display: none;">
+                <h1>Партнерская программа</h1>
+                <div class="referrals-subsection">
+                    <h2>О программе</h2>
+                    <p>Вы получаете вознаграждение 15% за каждую оплату услуги Ideav.</p>
+                    <div class="referral-links">
+                        <h3>Ваши партнерские ссылки:</h3>
+                        <div class="referral-link-item">
+                            <span>Регистрация:</span>
+                            <a href="https://ideav.ru?aff=217882" target="_blank">https://ideav.ru?aff=217882</a>
+                            <button type="button" class="copy-btn">📋</button>
+                        </div>
+                        <div class="referral-link-item">
+                            <span>Сайт:</span>
+                            <a href="https://ideav.ru/ru?aff=217882" target="_blank">https://ideav.ru/ru?aff=217882</a>
+                            <button type="button" class="copy-btn">📋</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="referrals-subsection">
+                    <h2>Статистика</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Клиенты</th>
+                                <th>Платежи</th>
+                                <th>Созрело*</th>
+                                <th>Комиссия</th>
+                                <th>Выплачено</th>
+                                <th>К выплате</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="stats-note">* Прошло не менее месяца с момента совершения платежа</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Simple section navigation for testing
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.cabinet-section').forEach(s => s.style.display = 'none');
+            // Show requested section
+            document.getElementById('section-' + sectionName).style.display = '';
+            // Update menu active state
+            document.querySelectorAll('.cabinet-menu-item').forEach(m => {
+                m.classList.toggle('active', m.dataset.section === sectionName);
+            });
+        }
+
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            this.innerHTML = (isDark ? '🌙 ' : '☀️ ') + '<span>' + (isDark ? 'Темная' : 'Светлая') + '</span>';
+        });
+    </script>
+</body>
+</html>
