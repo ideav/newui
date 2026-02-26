@@ -37,16 +37,19 @@
                         <input type="text" id="new-table-name" name="name" required placeholder="Введите название">
                     </div>
                     <div class="form-group">
-                        <label for="new-table-type">Базовый тип</label>
-                        <select id="new-table-type" name="type" required>
-                            <option value="3">Текст (CHARS)</option>
-                            <option value="4">Число (NUMBER)</option>
-                            <option value="5">Дата (DATE)</option>
-                            <option value="6">Время (DATETIME)</option>
-                            <option value="7">Логический (BOOLEAN)</option>
-                            <option value="8">Функция (FUNCTION)</option>
-                            <option value="9">Текстовый блок (MEMO)</option>
-                        </select>
+                        <label for="new-table-type">Тип</label>
+                        <div class="custom-select-wrapper">
+                            <select id="new-table-type" name="type" required class="custom-select">
+                                <option value="3" data-icon="&#128196;">Текст</option>
+                                <option value="4" data-icon="&#128290;">Число</option>
+                                <option value="5" data-icon="&#128197;">Дата</option>
+                                <option value="6" data-icon="&#128336;">Дата и время</option>
+                                <option value="7" data-icon="&#9745;">Логический</option>
+                                <option value="8" data-icon="&#9881;">Функция</option>
+                                <option value="9" data-icon="&#128221;">Текстовый блок</option>
+                            </select>
+                            <span class="custom-select-arrow">&#9660;</span>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" id="cancel-new-table">Отмена</button>
