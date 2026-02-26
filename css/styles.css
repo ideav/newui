@@ -50,11 +50,11 @@ body {
 .navbar {
     background-color: var(--nav-bg);
     border-bottom: 1px solid var(--border-color);
-    padding: 1rem 2rem;
+    padding: .3rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 4px var(--nav-shadow);
+    /* box-shadow: 0 2px 4px var(--nav-shadow); */
     position: sticky;
     top: 0;
     z-index: 100;
