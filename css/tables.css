@@ -95,7 +95,6 @@
 /* Folder Styles */
 .folder {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
     transition: box-shadow 0.2s ease;
@@ -111,7 +110,6 @@
     padding: 0.875rem 1rem;
     cursor: pointer;
     background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
     user-select: none;
     transition: background-color 0.2s ease;
 }
@@ -120,9 +118,7 @@
     background-color: var(--border-color);
 }
 
-.folder.collapsed .folder-header {
-    border-bottom: none;
-}
+/* Collapsed folder header - no border changes needed */
 
 .folder-toggle {
     display: flex;
@@ -244,9 +240,9 @@
 }
 
 .table-card-icon {
-    font-size: 1.25rem;
-    width: 1.75rem;
-    height: 1.75rem;
+    font-size: 0.875rem;
+    width: 1.25rem;
+    height: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
