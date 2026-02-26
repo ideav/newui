@@ -113,7 +113,49 @@
     border-right: 1px solid var(--border-color);
     padding: 1.5rem 0;
     flex-shrink: 0;
-    transition: background-color 0.3s ease;
+    transition: width 0.25s ease, background-color 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: 0 0.75rem 0.75rem auto;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+/* Collapsed sidebar */
+.cabinet-sidebar.collapsed {
+    width: 56px;
+}
+
+.cabinet-sidebar.collapsed .sidebar-toggle {
+    margin: 0 auto 0.75rem auto;
+}
+
+.cabinet-sidebar.collapsed .cabinet-menu-item span:not(.menu-icon) {
+    display: none;
+}
+
+.cabinet-sidebar.collapsed .cabinet-menu-item {
+    justify-content: center;
+    padding: 0.875rem 0;
 }
 
 .cabinet-menu {

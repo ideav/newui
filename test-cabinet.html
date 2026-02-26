@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="cabinet.title">Личный кабинет</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/cabinet.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left"><a href="#"><span>Logo</span></a></div>
+        <div class="navbar-right">
+            <div class="user-menu-wrapper">
+                <button id="user-menu-toggle" class="account-info" type="button" title="Меню пользователя">
+                    <div id="account-avatar" class="account-avatar">U</div>
+                    <span id="account-email" class="account-email">user@example.com</span>
+                    <span class="user-menu-arrow">▼</span>
+                </button>
+                <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none;">
+                    <button id="lang-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon">🌐</span>
+                        <span data-i18n="cabinet.userMenu.language">Язык</span>
+                        <span class="user-menu-value" id="lang-value">RU</span>
+                    </button>
+                    <button id="theme-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon" id="theme-icon">🌙</span>
+                        <span data-i18n="cabinet.userMenu.theme">Тема</span>
+                        <span class="user-menu-value" id="theme-value" data-i18n="nav.dark">Темная</span>
+                    </button>
+                    <div class="user-menu-divider"></div>
+                    <button id="logout-btn" class="user-menu-item user-menu-item-danger" type="button">
+                        <span class="user-menu-icon">🚪</span>
+                        <span data-i18n="cabinet.logout">Выйти</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="cabinet-layout">
+        <aside class="cabinet-sidebar" id="cabinet-sidebar">
+            <button id="sidebar-toggle" class="sidebar-toggle" type="button" title="Свернуть меню" aria-label="Toggle sidebar">&#9776;</button>
+            <nav class="cabinet-menu">
+                <button class="cabinet-menu-item active" data-section="profile">
+                    <span class="menu-icon">👤</span>
+                    <span data-i18n="cabinet.menu.profile">Профиль</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="balance">
+                    <span class="menu-icon">💰</span>
+                    <span data-i18n="cabinet.menu.balance">Баланс</span>
+                </button>
+                <button class="cabinet-menu-item" data-section="databases">
+                    <span class="menu-icon">🗄️</span>
+                    <span data-i18n="cabinet.menu.databases">Базы данных</span>
+                </button>
+            </nav>
+        </aside>
+        <main class="cabinet-content">
+            <section id="section-profile" class="cabinet-section">
+                <h1 data-i18n="cabinet.profile.title">Профиль</h1>
+                <p>Test cabinet content</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- Load only app.js (no cabinet.js auth redirect), wire UI manually -->
+    <script src="/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const i18n = window._app ? window._app.i18n : new I18nManager();
+            const theme = window._app ? window._app.theme : new ThemeManager(i18n);
+
+            // Sidebar toggle
+            const sidebar = document.getElementById('cabinet-sidebar');
+            const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+            if (sidebar && sidebarToggleBtn) {
+                sidebarToggleBtn.addEventListener('click', () => {
+                    const isCollapsed = sidebar.classList.toggle('collapsed');
+                    sidebarToggleBtn.title = isCollapsed ? 'Развернуть меню' : 'Свернуть меню';
+                });
+            }
+
+            // User menu dropdown
+            const menuToggle = document.getElementById('user-menu-toggle');
+            const menuDropdown = document.getElementById('user-menu-dropdown');
+            const menuWrapper = menuToggle ? menuToggle.closest('.user-menu-wrapper') : null;
+            if (menuToggle && menuDropdown) {
+                menuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = menuDropdown.style.display !== 'none';
+                    menuDropdown.style.display = isOpen ? 'none' : '';
+                    if (menuWrapper) menuWrapper.classList.toggle('open', !isOpen);
+                });
+                document.addEventListener('click', (e) => {
+                    if (!menuToggle.contains(e.target) && !menuDropdown.contains(e.target)) {
+                        menuDropdown.style.display = 'none';
+                        if (menuWrapper) menuWrapper.classList.remove('open');
+                    }
+                });
+            }
+
+            function updateThemeLabels() {
+                const themeIcon = document.getElementById('theme-icon');
+                const themeValue = document.getElementById('theme-value');
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                if (themeIcon) themeIcon.textContent = isDark ? '☀️' : '🌙';
+                if (themeValue) {
+                    const key = isDark ? 'nav.light' : 'nav.dark';
+                    themeValue.textContent = i18n.t(key);
+                    themeValue.setAttribute('data-i18n', key);
+                }
+            }
+
+            // Language toggle
+            const langToggleBtn = document.getElementById('lang-toggle');
+            const langValue = document.getElementById('lang-value');
+            if (langToggleBtn) {
+                langToggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    i18n.toggleLang();
+                    if (langValue) langValue.textContent = i18n.lang.toUpperCase();
+                    updateThemeLabels();
+                });
+            }
+
+            // Theme toggle
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    theme.toggleTheme();
+                    updateThemeLabels();
+                });
+            }
+
+            // Initialize labels
+            updateThemeLabels();
+            if (langValue) langValue.textContent = i18n.lang.toUpperCase();
+
+            console.log('[test] Initialized. lang=' + i18n.lang + ', theme=' + theme.theme);
+        });
+    </script>
+</body>
+</html>

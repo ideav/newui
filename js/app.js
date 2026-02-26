@@ -281,12 +281,16 @@ class I18nManager {
             el.textContent = this.t(key);
         });
         document.title = this.t('page.title');
-        const langToggle = document.getElementById('lang-toggle');
-        if (langToggle) langToggle.textContent = this.lang.toUpperCase();
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            themeToggle.innerHTML = (isDark ? '☀️ ' : '🌙 ') + '<span data-i18n="nav.' + (isDark ? 'light' : 'dark') + '">' + this.t(isDark ? 'nav.light' : 'nav.dark') + '</span>';
+        // Update lang value span if present (cabinet user menu structure)
+        const langValue = document.getElementById('lang-value');
+        if (langValue) {
+            langValue.textContent = this.lang.toUpperCase();
+        } else {
+            // Fallback for index.html simple lang toggle button
+            const langToggle = document.getElementById('lang-toggle');
+            if (langToggle && !langToggle.querySelector('[data-i18n]')) {
+                langToggle.textContent = this.lang.toUpperCase();
+            }
         }
     }
 }
@@ -313,11 +317,25 @@ class ThemeManager {
     }
 
     updateThemeButton() {
-        const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
-            const isDark = this.theme === 'dark';
-            const labelKey = isDark ? 'nav.light' : 'nav.dark';
-            themeToggle.innerHTML = (isDark ? '☀️ ' : '🌙 ') + '<span data-i18n="' + labelKey + '">' + this.i18n.t(labelKey) + '</span>';
+        const isDark = this.theme === 'dark';
+        // Update cabinet user menu structure (theme-icon + theme-value spans)
+        const themeIcon = document.getElementById('theme-icon');
+        const themeValue = document.getElementById('theme-value');
+        if (themeIcon) {
+            themeIcon.textContent = isDark ? '☀️' : '🌙';
+        }
+        if (themeValue) {
+            const key = isDark ? 'nav.light' : 'nav.dark';
+            themeValue.textContent = this.i18n.t(key);
+            themeValue.setAttribute('data-i18n', key);
+        }
+        // Fallback for index.html simple theme toggle button (no structured spans)
+        if (!themeIcon && !themeValue) {
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                const labelKey = isDark ? 'nav.light' : 'nav.dark';
+                themeToggle.innerHTML = (isDark ? '☀️ ' : '🌙 ') + '<span data-i18n="' + labelKey + '">' + this.i18n.t(labelKey) + '</span>';
+            }
         }
     }
 }
@@ -634,18 +652,20 @@ class App {
         // Apply i18n
         this.i18n.applyAll();
 
-        // Theme toggle
+        // Theme toggle — only bind on index.html (no theme-icon span present)
+        // Cabinet page (main.html) binds its own handler in cabinet.js setupUserMenuDropdown()
         const themeToggle = document.getElementById('theme-toggle');
-        if (themeToggle) {
+        if (themeToggle && !document.getElementById('theme-icon')) {
             themeToggle.addEventListener('click', () => {
                 this.theme.toggleTheme();
                 this.i18n.applyAll(); // refresh i18n keys after theme label update
             });
         }
 
-        // Lang toggle
+        // Lang toggle — only bind on index.html (no lang-value span present)
+        // Cabinet page (main.html) binds its own handler in cabinet.js setupUserMenuDropdown()
         const langToggle = document.getElementById('lang-toggle');
-        if (langToggle) {
+        if (langToggle && !document.getElementById('lang-value')) {
             langToggle.addEventListener('click', () => {
                 this.i18n.toggleLang();
                 // Update login button text if visible
