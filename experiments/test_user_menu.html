@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Menu Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/cabinet.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="index.html">
+                <img src="../images/logo.png" alt="Логотип" class="logo">
+            </a>
+        </div>
+        <div class="navbar-right">
+            <div class="user-menu-wrapper">
+                <button id="user-menu-toggle" class="account-info" type="button" title="Меню пользователя">
+                    <div id="account-avatar" class="account-avatar">И</div>
+                    <span id="account-email" class="account-email">ivan@example.com</span>
+                    <span class="user-menu-arrow">▼</span>
+                </button>
+                <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none;">
+                    <button id="lang-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon">🌐</span>
+                        <span data-i18n="cabinet.userMenu.language">Язык</span>
+                        <span class="user-menu-value" id="lang-value">RU</span>
+                    </button>
+                    <button id="theme-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon" id="theme-icon">🌙</span>
+                        <span data-i18n="cabinet.userMenu.theme">Тема</span>
+                        <span class="user-menu-value" id="theme-value" data-i18n="nav.dark">Темная</span>
+                    </button>
+                    <div class="user-menu-divider"></div>
+                    <button id="logout-btn" class="user-menu-item user-menu-item-danger" type="button">
+                        <span class="user-menu-icon">🚪</span>
+                        <span data-i18n="cabinet.logout">Выйти</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Test Content -->
+    <div style="padding: 2rem;">
+        <h1>Тест выпадающего меню пользователя</h1>
+        <p>Нажмите на имя пользователя справа вверху, чтобы увидеть меню.</p>
+    </div>
+
+    <script>
+        // Simple test script for dropdown
+        const menuToggle = document.getElementById('user-menu-toggle');
+        const menuDropdown = document.getElementById('user-menu-dropdown');
+        const menuWrapper = menuToggle.closest('.user-menu-wrapper');
+
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = menuDropdown.style.display !== 'none';
+            menuDropdown.style.display = isOpen ? 'none' : '';
+            menuWrapper.classList.toggle('open', !isOpen);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuToggle.contains(e.target) && !menuDropdown.contains(e.target)) {
+                menuDropdown.style.display = 'none';
+                menuWrapper.classList.remove('open');
+            }
+        });
+
+        // Language toggle
+        const langToggle = document.getElementById('lang-toggle');
+        const langValue = document.getElementById('lang-value');
+        let currentLang = 'ru';
+        langToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            langValue.textContent = currentLang.toUpperCase();
+        });
+
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeValue = document.getElementById('theme-value');
+        themeToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            themeValue.textContent = newTheme === 'dark' ? 'Светлая' : 'Темная';
+        });
+
+        // Logout
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', () => {
+            alert('Выход из системы');
+        });
+    </script>
+</body>
+</html>
