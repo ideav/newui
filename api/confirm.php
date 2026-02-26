@@ -22,14 +22,6 @@ ini_set('log_errors', 1);
 require_once __DIR__ . '/db_helpers.php';
 require_once __DIR__ . '/auth_helpers.php';
 
-// Type constants
-define('USER', 1);
-define('TOKEN', 2);
-define('XSRF', 3);
-define('PASSWORD', 20);
-define('ACTIVITY', 4);
-define('EMAIL', 18);
-
 // Handle opt-out request
 if (isset($_GET["optout"])) {
     $userId = (int)$_GET["optout"];
