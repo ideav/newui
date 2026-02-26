@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tables Test - Demo DB</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/main-app.css">
+    <script>
+        // Simulated global variables that would be set by the templater
+        var db = 'demo',
+            xsrf = 'test-token',
+            id = '',
+            token = 'test-token',
+            uid = '1',
+            user = 'admin',
+            role = 'admin',
+            action = 'tables';
+    </script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="#" class="navbar-brand">
+                <img src="../images/logo.png" alt="Logo" class="logo">
+                <span class="brand-name">demo</span>
+            </a>
+        </div>
+        <div class="navbar-right">
+            <div class="user-menu-wrapper">
+                <button id="user-menu-toggle" class="account-info" type="button" title="User menu">
+                    <div id="account-avatar" class="account-avatar">A</div>
+                    <span id="account-email" class="account-email">admin</span>
+                    <span class="user-menu-arrow">&#9660;</span>
+                </button>
+                <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none;">
+                    <a href="/my" class="user-menu-item">
+                        <span class="user-menu-icon">&#128100;</span>
+                        <span>Личный кабинет</span>
+                    </a>
+                    <div class="user-menu-divider"></div>
+                    <button id="theme-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon" id="theme-icon">&#127769;</span>
+                        <span>Тема</span>
+                        <span class="user-menu-value" id="theme-value">Темная</span>
+                    </button>
+                    <div class="user-menu-divider"></div>
+                    <button id="logout-btn" class="user-menu-item user-menu-item-danger" type="button">
+                        <span class="user-menu-icon">&#128682;</span>
+                        <span>Выйти</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Application Layout -->
+    <div class="app-layout">
+        <!-- Left Sidebar Menu -->
+        <aside class="app-sidebar" id="app-sidebar">
+            <button id="sidebar-toggle" class="sidebar-toggle" type="button" title="Toggle menu" aria-label="Toggle sidebar">&#9776;</button>
+            <nav class="app-menu" id="app-menu">
+                <a href="#" class="app-menu-item" data-href="object/18">
+                    <span class="menu-icon">&#128100;</span>
+                    <span class="menu-text">Пользователи</span>
+                </a>
+                <a href="#" class="app-menu-item" data-href="form?edit">
+                    <span class="menu-icon">&#128196;</span>
+                    <span class="menu-text">Формы</span>
+                </a>
+                <a href="#" class="app-menu-item" data-href="sql">
+                    <span class="menu-icon">&#128451;</span>
+                    <span class="menu-text">Запросы</span>
+                </a>
+                <a href="#" class="app-menu-item" data-href="upload">
+                    <span class="menu-icon">&#128228;</span>
+                    <span class="menu-text">Загрузка</span>
+                </a>
+                <a href="#" class="app-menu-item active" data-href="tables">
+                    <span class="menu-icon">&#128202;</span>
+                    <span class="menu-text">Таблицы</span>
+                </a>
+                <a href="#" class="app-menu-item" data-href="edit_types">
+                    <span class="menu-icon">&#128736;</span>
+                    <span class="menu-text">Структура</span>
+                </a>
+                <a href="#" class="app-menu-item" data-href="dir_admin">
+                    <span class="menu-icon">&#128193;</span>
+                    <span class="menu-text">Файлы</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-content">
+            <!-- Tables Workplace Content -->
+            <div class="tables-workplace">
+                <div class="tables-header">
+                    <h1>Таблицы</h1>
+                    <div class="tables-actions">
+                        <div class="search-box">
+                            <input type="text" id="tables-search" placeholder="Поиск таблиц..." class="search-input">
+                            <span class="search-icon">&#128269;</span>
+                        </div>
+                        <button type="button" id="add-table-btn" class="btn-primary btn-small">
+                            <span>+</span> Новая таблица
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tables-container" id="tables-container">
+                    <!-- Folders with tables will be rendered here by JavaScript -->
+                    <div class="loading-state" id="tables-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Загрузка таблиц...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Table Modal -->
+            <div id="new-table-modal" class="modal" style="display: none;">
+                <div class="modal-backdrop"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Новая таблица</h2>
+                        <button type="button" class="modal-close" id="close-new-table-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-table-form">
+                            <div class="form-group">
+                                <label for="new-table-name">Название таблицы</label>
+                                <input type="text" id="new-table-name" name="name" required placeholder="Введите название">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-table-type">Базовый тип</label>
+                                <select id="new-table-type" name="type" required>
+                                    <option value="3">Текст (CHARS)</option>
+                                    <option value="4">Число (NUMBER)</option>
+                                    <option value="5">Дата (DATE)</option>
+                                    <option value="6">Время (DATETIME)</option>
+                                    <option value="7">Логический (BOOLEAN)</option>
+                                    <option value="8">Функция (FUNCTION)</option>
+                                    <option value="9">Текстовый блок (MEMO)</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancel-new-table">Отмена</button>
+                                <button type="submit" class="btn-primary">Создать</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Folder Modal -->
+            <div id="new-folder-modal" class="modal" style="display: none;">
+                <div class="modal-backdrop"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Новая папка</h2>
+                        <button type="button" class="modal-close" id="close-new-folder-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-folder-form">
+                            <div class="form-group">
+                                <label for="new-folder-name">Название папки</label>
+                                <input type="text" id="new-folder-name" name="name" required placeholder="Введите название">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary" id="cancel-new-folder">Отмена</button>
+                                <button type="submit" class="btn-primary">Создать</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings object - simulated saved config -->
+    <script>
+        var myTablesSet = {};
+        // Simulating saved settings
+        // myTablesSet['123'] = {'UI': '{"Избранное":{"open":true,"tabs":["18","42"]},"Справочники":{"open":true,"tabs":[]}}'};
+    </script>
+
+    <link rel="stylesheet" href="../css/tables.css">
+    <script src="../js/app.js"></script>
+    <script src="../js/main-app.js"></script>
+    <script src="../js/tables.js"></script>
+
+    <!-- Override loadTables to use demo data after tables.js loads -->
+    <script>
+        // Wait for tablesController to be initialized, then override its methods
+        (function waitForController() {
+            if (window.tablesController) {
+                // Override loadTables
+                const originalLoadTables = window.tablesController.loadTables.bind(window.tablesController);
+                window.tablesController.loadTables = async function() {
+                    const loadingEl = document.getElementById('tables-loading');
+
+                    // Demo data based on the terms.json from the issue
+                    this.tables = [
+                        { id: 2974, type: 4, name: "Action Payment" },
+                        { id: 137, type: 3, name: "Form" },
+                        { id: 29, type: 3, name: "Format" },
+                        { id: 63, type: 8, name: "Function" },
+                        { id: 47, type: 3, name: "Grant" },
+                        { id: 1141, type: 3, name: "Plan" },
+                        { id: 22, type: 3, name: "Query" },
+                        { id: 17599, type: 3, name: "Recruit" },
+                        { id: 42, type: 3, name: "Role" },
+                        { id: 65, type: 3, name: "Total" },
+                        { id: 18, type: 3, name: "User" },
+                        { id: 269, type: 3, name: "Settings" },
+                        { id: 100, type: 5, name: "Calendar" },
+                        { id: 101, type: 6, name: "Events" },
+                        { id: 102, type: 7, name: "Flags" },
+                        { id: 103, type: 9, name: "Notes" }
+                    ];
+
+                    console.log('[demo] Loaded demo tables:', this.tables);
+
+                    if (loadingEl) {
+                        loadingEl.style.display = 'none';
+                    }
+                };
+
+                // Override saveConfig
+                window.tablesController.saveConfig = async function() {
+                    console.log('[demo] Would save config:', JSON.stringify(this.config, null, 2));
+                };
+
+                // Override createNewTable
+                window.tablesController.createNewTable = async function() {
+                    const nameInput = document.getElementById('new-table-name');
+                    const typeSelect = document.getElementById('new-table-type');
+
+                    if (!nameInput || !typeSelect) return;
+
+                    const name = nameInput.value.trim();
+                    const type = parseInt(typeSelect.value);
+
+                    if (!name) {
+                        alert('Введите название таблицы');
+                        return;
+                    }
+
+                    const newId = Math.floor(Math.random() * 10000) + 20000;
+                    this.tables.push({ id: newId, type: type, name: name });
+
+                    const firstFolder = Object.keys(this.config)[0];
+                    if (firstFolder) {
+                        if (!this.config[firstFolder].tabs) {
+                            this.config[firstFolder].tabs = [];
+                        }
+                        this.config[firstFolder].tabs.unshift(String(newId));
+                    }
+
+                    console.log('[demo] Created new table:', { id: newId, type: type, name: name });
+                    this.render();
+                    this.hideNewTableModal();
+                };
+
+                // Re-initialize with overridden methods
+                window.tablesController.init();
+            } else {
+                setTimeout(waitForController, 50);
+            }
+        })();
+    </script>
+</body>
+</html>
