@@ -3,16 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Begin: noAdmin1 --><!--{Role}-->
     <title data-i18n="cabinet.title">Личный кабинет</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/cabinet.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/cabinet.css">
+<!-- End: noAdmin1 -->
+<!-- Begin: isAdmin1 --><!--{Role}-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/css.css" />
+    <title>Integral</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <script>
+        var db='{_global_.z}',xsrf='{_global_.xsrf}',id='{_global_.id}',token='{_global_.token}',uid='{_global_.user_id}',action='{_global_.action}',menu=[];
+    </script>
+    <script src="/js/js.js"></script>
+    <script>
+        <!-- Begin:MyRoleMenu -->menu.push({href:'{HREF}',name:'{Name}'.indexOf('[EN]')===-1?'{Name}':t9n('{Name}')});
+        <!-- End:MyRoleMenu -->
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<!-- End: isAdmin1 -->
 </head>
 <body>
+<!-- Begin: noAdmin --><!--{Role}-->
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-left">
             <a href="index.html">
-                <img src="images/logo.png" alt="Логотип" class="logo">
+                <img src="/images/logo.png" alt="Логотип" class="logo">
             </a>
         </div>
         <div class="navbar-right">
@@ -353,8 +373,81 @@
             </section>
         </main>
     </div>
+    <script>
+        if('{_global_.role}'==='admin')
+            document.querySelectorAll('.adm').forEach(el => {
+                el.style.display = el.style.display === 'none' ? '' : 'none';
+            });
+    </script>
+    <script src="/js/app.js"></script>
+    <script src="/js/cabinet.js"></script>
+<!-- End: noAdmin -->
+<!-- Begin: isAdmin --><!--{Role}-->
+    <nav id="nav" class="navbar navbar-expand-562 fixed-top dark navbar-fixed-top">
+        <a id="brand" class="navbar-brand" href="/{_global_.z}/">
+            <img src="/i/lamp.png" width="30" loading="lazy"/>
+        </a>
+        <button onclick="burgerClick(this)" class="navbar-toggler" type="button"  data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 16 16" class="icon" style="shape-rendering: geometricprecision; margin-top: 0px;">
+                    <path fill-rule="evenodd" class="" fill="currentColor" d="M2,12 C2,11.4477153 2.45576096,11 3.00247329,11 L12.9975267,11 C13.5511774,11 14,11.4438648 14,12 C14,12.5522847 13.544239,13 12.9975267,13 L3.00247329,13 C2.44882258,13 2,12.5561352 2,12 Z M2,8 C2,7.44771525 2.45576096,7 3.00247329,7 L12.9975267,7 C13.5511774,7 14,7.44386482 14,8 C14,8.55228475 13.544239,9 12.9975267,9 L3.00247329,9 C2.44882258,9 2,8.55613518 2,8 Z M2,4 C2,3.44771525 2.45576096,3 3.00247329,3 L12.9975267,3 C13.5511774,3 14,3.44386482 14,4 C14,4.55228475 13.544239,5 12.9975267,5 L3.00247329,5 C2.44882258,5 2,4.55613518 2,4 Z"></path>
+                </svg>
+            </span> 
+        </button>
+    
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul id="navbar-list" class="navbar-nav">
+                <div id="navlist" class="hidden">
+                    <li class="nav-item"><a class="nav-link" id="list:id:" href="/{_global_.z}/:href:">:name:</a></li>
+                </div>
+                <div id="extralist" class="hidden">
+                    <li id="dropdown-link" class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Еще
+                        </a>
+                        <div class="dropdown-menu" id="dropdown-list" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="/{_global_.z}/:href:">:name:</a>
+                        </div>
+                    </li>
+                </div>
+            </ul>
+        </div>
+        <div class="right-block" id="right_block">
+            <div class="nav-item dropdown">
+                <a class="user-link dropdown-toggle user-margin" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img src="https://img.icons8.com/material-sharp/30/ffffff/user.png"/>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" target="_help" href="https://help.ideav.online"><t9n>[RU]Помощь[EN]Help</t9n></a>
+                    <a class="dropdown-item" onclick="toggleLocale()">EN/RU</a>
+                    <a class="dropdown-item" onclick="changePwd()"><t9n>[RU]Сменить пароль[EN]Change password</t9n></a>
+                    <a class="dropdown-item" onclick="exitLogin()"><t9n>[RU]Выход[EN]Exit</t9n></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="content">
+    <!-- File: a -->
+    </div>
+    <div class="footer">
+    <!--Elapsed-->
+    </div>
+    <FORM method="POST" id="post" action="/{_global_.z}/"><input type="hidden" name="_xsrf" value="{_global_.xsrf}"></FORM>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+    <script src="/js/main.js"></script>
+    <script>
+    localize();
+    function exitLogin(){
+        document.cookie='{_global_.z}=;Path=/';
+        document.location.href='/'; 
+    }
+    function toggleLocale(){
+        document.cookie='{_global_.z}_locale='+(locale==='[EN]'?'RU':'EN')+';Path=/';
+        location.reload();
+    }
+    </script>
+<!-- End: isAdmin -->
 
-    <script src="js/app.js"></script>
-    <script src="js/cabinet.js"></script>
 </body>
 </html>
