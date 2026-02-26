@@ -297,8 +297,9 @@ class TablesController {
 
     setupFolderDragDrop(folderEl, folderName, isVirtual) {
         const content = folderEl.querySelector('.folder-content');
+        const header = folderEl.querySelector('.folder-header');
 
-        // Allow dropping tables into folder
+        // Allow dropping tables into folder content
         content.addEventListener('dragover', (e) => {
             if (this.draggedTable) {
                 e.preventDefault();
@@ -318,6 +319,31 @@ class TablesController {
             folderEl.classList.remove('drag-over');
 
             if (this.draggedTable && !isVirtual) {
+                this.moveTableToFolder(this.draggedTable, folderName);
+            }
+        });
+
+        // Allow dropping tables onto folder header (especially for collapsed folders)
+        header.addEventListener('dragover', (e) => {
+            if (this.draggedTable) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                folderEl.classList.add('drag-over');
+            }
+        });
+
+        header.addEventListener('dragleave', (e) => {
+            if (!header.contains(e.relatedTarget)) {
+                folderEl.classList.remove('drag-over');
+            }
+        });
+
+        header.addEventListener('drop', (e) => {
+            if (this.draggedTable && !isVirtual) {
+                e.preventDefault();
+                e.stopPropagation();
+                folderEl.classList.remove('drag-over');
                 this.moveTableToFolder(this.draggedTable, folderName);
             }
         });
@@ -445,6 +471,7 @@ class TablesController {
 
         try {
             const vars = new FormData();
+            vars.append('_xsrf', xsrf);
             vars.append('t273', configJson);
 
             let url;
@@ -461,9 +488,6 @@ class TablesController {
             const response = await fetch(url, {
                 method: 'POST',
                 credentials: 'include',
-                headers: {
-                    'X-XSRF-TOKEN': xsrf
-                },
                 body: vars
             });
 
@@ -636,13 +660,14 @@ class TablesController {
         }
 
         try {
-            // Create new table via API
+            // Create new table via _d_new API
+            // _d_new creates a table with 1 column based on type
             const vars = new FormData();
             vars.append('_xsrf', xsrf);
-            vars.append('name', name);
-            vars.append('type', type);
+            vars.append('t', type);    // Base type ID
+            vars.append('val', name);  // Table name
 
-            const response = await fetch('/' + db + '/_m_new_type?JSON', {
+            const response = await fetch('/apix/_d_new?JSON=1', {
                 method: 'POST',
                 credentials: 'include',
                 body: vars
@@ -655,14 +680,14 @@ class TablesController {
             const result = await response.json();
             console.log('[tables] New table created:', result);
 
-            // Add to first folder
-            if (result.id) {
+            // Add to first folder (result.obj contains the new table ID)
+            if (result.obj) {
                 const firstFolder = Object.keys(this.config)[0];
                 if (firstFolder) {
                     if (!this.config[firstFolder].tabs) {
                         this.config[firstFolder].tabs = [];
                     }
-                    this.config[firstFolder].tabs.unshift(String(result.id));
+                    this.config[firstFolder].tabs.unshift(String(result.obj));
                     await this.saveConfig();
                 }
 
