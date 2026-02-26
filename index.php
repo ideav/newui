@@ -522,7 +522,7 @@ if ($route['type'] === 'not_found') {
 }
 
 // ============================================================================
-// DATABASE AND API ROUTES - REQUIRE AUTHENTICATION
+// DATABASE AND API ROUTES
 // ============================================================================
 
 // Set the database/table name globally
@@ -533,6 +533,207 @@ require_once __DIR__ . '/include/connection.php';
 
 // Get database connection
 $connection = getConnection();
+
+// ============================================================================
+// REGISTRATION ROUTE: /my/register
+// ============================================================================
+
+if ($z === 'my' && $route['action'] === 'register') {
+    require_once __DIR__ . '/api/db_helpers.php';
+    require_once __DIR__ . '/api/auth_helpers.php';
+    require_once __DIR__ . '/api/email_helpers.php';
+
+    // Handle email confirmation: GET /my/register?u=ID&c=TOKEN
+    if (isset($_GET['c']) && isset($_GET['u'])) {
+        $u = (int)$_GET['u'];
+        if ($u > 0) {
+            $result = Exec_sql("SELECT user.val user, user.id uid, token.id tok, token.val token, xsrf.id xsrf, act.id act, pwd.val pwd, pwd.id pid, email.val email
+                                FROM $z user LEFT JOIN $z token ON token.up=user.id AND token.t=" . TOKEN
+                                        . " LEFT JOIN $z xsrf ON xsrf.up=user.id AND xsrf.t=" . XSRF
+                                        . " LEFT JOIN $z pwd ON pwd.up=user.id AND pwd.t=" . PASSWORD
+                                        . " LEFT JOIN $z act ON act.up=user.id AND act.t=" . ACTIVITY
+                                        . " LEFT JOIN $z email ON email.up=user.id AND email.t=" . EMAIL
+                                . " WHERE user.id=$u AND user.t=" . USER
+                            , "Check user & conf code");
+            if ($row = mysqli_fetch_array($result)) {
+                if ($row['uid'] && $row['token'] === $_GET['c']) {
+                    // Confirm user: hash and save password
+                    Exec_sql("UPDATE $z SET val='" . hash('sha512', Salt($row['user'], $row['pwd'])) . "' WHERE id=" . $row['pid'], "Update user's password");
+                    updateTokens($row);
+                    createDb($row['uid'], "", $row['email'], $row['pwd']);
+                    header("Location: /$z");
+                    exit;
+                }
+            }
+        }
+        login($z, "", "EXPIRED");
+        exit;
+    }
+
+    // Handle opt-out: GET /my/register?optout=ID
+    if (isset($_GET['optout'])) {
+        header('Content-Type: text/html; charset=utf-8');
+        echo t9n("[RU]Вы отписались от рассылки для [EN]You have cancelled the email subscription for ") . htmlspecialchars($_GET['optout']);
+        exit;
+    }
+
+    // Handle registration form submission: POST /my/register
+    if (isset($_POST['email'])) {
+        if (!defined('AFFILIATE')) define('AFFILIATE', 1012);
+        if (!defined('CAMPAIGN'))  define('CAMPAIGN',  304);
+
+        $email = mysqli_real_escape_string($connection, $_POST['email']);
+        $msg = "";
+        if (!preg_match("/.+@.+\..+/i", $email))
+            $msg .= t9n("[RU]Вы ввели неверный email[EN]Please provide a correct email") . "<br/><br/>\n";
+        if (!strlen($_POST['regpwd'] ?? '') || !strlen($_POST['regpwd1'] ?? ''))
+            $msg .= t9n("[RU]Введен пустой пароль[EN]Please input the password") . "<br/><br/>\n";
+        elseif (strlen($_POST['regpwd']) < 6)
+            $msg .= t9n("[RU]Введенный вами пароль слишком короток (менее 6 символов)[EN]The password must be at least 6 characters long") . "<br/><br/>\n";
+        elseif ($_POST['regpwd'] !== $_POST['regpwd1'])
+            $msg .= t9n("[RU]Введенные вами пароли не совпадают[EN]Repeat the same password twice") . "<br/><br/>\n";
+        if (!strlen($_POST['agree'] ?? ''))
+            $msg .= t9n("[RU]Пожалуйста, поставьте отметку, что ознакомились с&nbsp;Лицензионным соглашением"
+                . "[EN]Please confirm that you have read the&nbsp;<a href=\"offer.html\">papers to protect you") . "<br/><br/>\n";
+        if (strlen($msg))
+            my_die($msg);
+
+        if ($row = mysqli_fetch_array(Exec_sql("SELECT 1 FROM $z WHERE val='$email' AND t=" . USER, "Check user name uniquity")))
+            if ($row[0])
+                my_die(t9n("[RU]Этот email уже зарегистрирован.[EN]This email is already registered") . " [errMailExists]");
+
+        $id = newUser($email, $email, "115", "", "");
+        Insert($id, 1, PASSWORD, $_POST['regpwd'], "Insert password");
+        $confirm = md5("xz$email");
+        Insert($id, 1, TOKEN, $confirm, "Insert confirmation code");
+        if (isset($_COOKIE['_aff']))
+            Insert($id, 1, AFFILIATE, (int)$_COOKIE['_aff'], "Insert the affiliate ref");
+        if (isset($_COOKIE['yd_param'])) {
+            $campId = htmlspecialchars($_COOKIE['yd_param']);
+            Insert($id, 1, CAMPAIGN, $campId, "Insert the campaign tag");
+        } else {
+            $campId = "";
+        }
+        $db = mail2DB($email, $id);
+        $server_name = $_SERVER['SERVER_NAME'];
+        mysendmail(ADMINEMAIL, "Registration from $campId $server_name: $email",
+            "Email: $email\nhttps://$server_name/$db/object/" . USER);
+        mysendmail($email, t9n("[RU]Регистрация на сервисе [EN]Registration from ") . $server_name,
+            t9n("[RU]\r\nЗдравствуйте![EN]Hello my friend,") . "\r\n\r\n"
+            . t9n("[RU]Для подтверждения регистрации пройдите по ссылке:[EN]To complete the registration click the following link:")
+            . "\r\nhttps://$server_name/my/register?u=$id&c=$confirm\r\n"
+            . t9n("[RU]или скопируйте её и откройте в Вашем web-браузере.\r\nЭта ссылка действительна в течение трех дней."
+                . "[EN]or copy its text and open it in your Internet browser.\r\nThe link will expire in 3 days.")
+            . "\r\n" . t9n("[RU]Имя вашей базы[EN]The name of your database") . ": $db, " . t9n("[RU]пользователь[EN]user") . ": $db"
+            . "\r\n\r\n" . t9n("[RU]После подтверждения ваша база будет здесь[EN]After the confirmation you will find your database here")
+            . ":\r\nhttps://$server_name/$db?login=$db"
+            . "\r\n\r\n" . t9n("[RU]С уважением,\r\nКоманда Интеграм[EN]Best regards,\r\nIdeaV team")
+            . "\r\n\r\n" . t9n("[RU]Если вы не хотите получать от нас писем, связанных с регистрацией, вы можете отписаться от оповещений:"
+                . "\r\nhttps://$server_name/my/register?optout=$id"
+                . "[EN]In case you do not want to receive messages regarding your registration, unsubscribe here:"
+                . "\r\nhttps://$server_name/my/register?optout=$id"));
+        login($db, "", "toConfirm");
+        exit;
+    }
+
+    my_die("Запрос не распознан");
+    exit;
+}
+
+// ============================================================================
+// GOOGLE OAUTH CALLBACK: GET /auth.asp?code=... or GET /my?code=...
+// ============================================================================
+
+if (!empty($_GET['code']) && ($z === 'my' || $z === 'auth.asp')) {
+    $z = 'my';
+    require_once __DIR__ . '/api/db_helpers.php';
+    require_once __DIR__ . '/api/auth_helpers.php';
+
+    $oauthParams = [
+        'client_id'     => G_CLIENT_ID,
+        'client_secret' => G_CLIENT_PK,
+        'redirect_uri'  => 'https://' . $_SERVER['SERVER_NAME'] . '/auth.asp',
+        'grant_type'    => 'authorization_code',
+        'code'          => $_GET['code']
+    ];
+
+    $ch = curl_init('https://accounts.google.com/o/oauth2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $oauthParams);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    $data = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($data, true);
+    if (!empty($data['access_token'])) {
+        $infoParams = [
+            'access_token' => $data['access_token'],
+            'id_token'     => $data['id_token'],
+            'token_type'   => 'Bearer',
+            'expires_in'   => 3599
+        ];
+        $info = file_get_contents('https://www.googleapis.com/oauth2/v1/userinfo?' . urldecode(http_build_query($infoParams)));
+        $info = json_decode($info, true);
+        if (!isset($info['id']))
+            my_die("Authentication error");
+
+        $db = isset($_GET['state']) ? (preg_match(USER_DB_MASK, $_GET['state']) ? $_GET['state'] : "") : "";
+        if ($row = mysqli_fetch_array(Exec_sql("SELECT user.id uid, token.id tok, token.val token, xsrf.id xsrf, act.id act, db.val db
+                                        FROM $z user LEFT JOIN $z token ON token.up=user.id AND token.t=" . TOKEN
+                                                . " LEFT JOIN $z xsrf ON xsrf.up=user.id AND xsrf.t=" . XSRF
+                                                . " LEFT JOIN $z act ON act.up=user.id AND act.t=" . ACTIVITY
+                                                . " LEFT JOIN $z db ON db.up=user.id AND db.t=" . DATABASE
+                                                . (strlen($db) ? " AND db.val='$db'" : "")
+                                        . " WHERE user.val='" . $info['id'] . "' AND user.t=" . USER
+                                        , "Get google user and their DBs"))) {
+            updateTokens($row);
+            if ($row['db']) {
+                $z = $row['db'];
+                if ($row2 = mysqli_fetch_array(Exec_sql("SELECT user.id, token.val tok, xsrf.val xsrf FROM $z user LEFT JOIN $z token ON token.up=user.id AND token.t=" . TOKEN
+                                                        . " LEFT JOIN $z xsrf ON xsrf.up=user.id AND xsrf.t=" . XSRF
+                                                    . " WHERE user.val='$z' AND user.t=" . USER
+                                                    , "Get token for google user"))) {
+                    if ($row2['tok'])
+                        $token = $row2['tok'];
+                    else {
+                        $token = md5(microtime(true));
+                        Insert($row2['id'], 1, TOKEN, $token, "Reset token for G admin");
+                    }
+                    if (!$row2['xsrf'])
+                        Insert($row2['id'], 1, XSRF, xsrf($token, $z), "Reset xsrf for G admin");
+                } else {
+                    login($z, "", "adminNotFound");
+                    exit;
+                }
+            } else {
+                $token = $row['token'];
+            }
+            setcookie($z, $token, time() + 2592000 * 12, "/");
+        } else {
+            $GLOBALS['GLOBAL_VARS']['token'] = md5(microtime(true));
+            $GLOBALS['GLOBAL_VARS']['xsrf'] = xsrf($GLOBALS['GLOBAL_VARS']['token'], $z);
+            $id = newUser($info['id'], $info['email'], "115", $info['name'], $info['picture']);
+            Insert($id, 1, 274, "Google", "Set social for new G user");
+            Insert($id, 1, TOKEN, $GLOBALS['GLOBAL_VARS']['token'], "Set token for new G user");
+            Insert($id, 1, XSRF, $GLOBALS['GLOBAL_VARS']['xsrf'], "Set xsrf for new G user");
+            if (isset($_COOKIE['_aff']))
+                Insert($id, 1, 1012, (int)$_COOKIE['_aff'], "Insert the google affiliate ref");
+            setcookie($z, $GLOBALS['GLOBAL_VARS']['token'], time() + 2592000 * 12, "/");
+            createDb($id, $info['name'], $info['email']);
+        }
+        header("Location: " . (isset($_GET['state']) ? $_GET['state'] : "/$z"));
+    }
+    exit;
+}
+
+// Handle OPTIONS preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header("Allow: GET,POST,OPTIONS");
+    header("Content-Length: 0");
+    exit;
+}
 
 // Validate table exists (skip for auth routes)
 $authRoutes = ['auth', 'auth.asp', 'xsrf'];

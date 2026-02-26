@@ -10,6 +10,26 @@
 
 require_once __DIR__ . '/../config.php';
 
+// DB name masks - defined at module level
+if (!defined('DB_MASK'))      define('DB_MASK',      "/^[a-z0-9_]{1,15}$/i");
+if (!defined('USER_DB_MASK')) define('USER_DB_MASK', "/^[a-z]\w{2,14}$/i");
+
+// Type constants - defined at module level to prevent PHP 8.3 redefinition errors
+if (!defined('USER'))     define('USER',     18);
+if (!defined('DATABASE')) define('DATABASE', 271);
+if (!defined('PHONE'))    define('PHONE',    30);
+if (!defined('XSRF'))     define('XSRF',     40);
+if (!defined('EMAIL'))    define('EMAIL',    41);
+if (!defined('ROLE'))     define('ROLE',     42);
+if (!defined('ACTIVITY')) define('ACTIVITY', 124);
+if (!defined('PASSWORD')) define('PASSWORD', 20);
+if (!defined('TOKEN'))    define('TOKEN',    125);
+if (!defined('SECRET'))   define('SECRET',   130);
+if (!defined('VERSION'))  define('VERSION',  8);
+if (!defined('NAME'))     define('NAME',     33);
+if (!defined('PICTURE'))  define('PICTURE',  280);
+if (!defined('DATE'))     define('DATE',     156);
+
 /**
  * Execute SQL query with error handling and logging
  *
@@ -44,7 +64,7 @@ function Exec_sql($sql, $message = "") {
 function Insert($up, $ord, $t, $val, $message = "") {
     global $connection, $z;
 
-    $val_escaped = addcslashes($val, "\\'");
+    $val_escaped = mysqli_real_escape_string($connection, $val);
     $sql = "INSERT INTO `$z` (up, ord, t, val) VALUES ($up, $ord, $t, '$val_escaped')";
 
     Exec_sql($sql, "Insert: $message");
@@ -64,17 +84,9 @@ function Insert($up, $ord, $t, $val, $message = "") {
  * @return int The new user's ID
  */
 function newUser($user, $email, $role, $name = "", $picture = "") {
-    // Type constants (from the old CRM system)
-    define('USER', 1);      // User type
-    define('EMAIL', 18);    // Email type
-    define('ROLE', 164);    // Role link type
-    define('DATE', 156);    // Date type
-    define('NAME', 33);     // Name type
-    define('PICTURE', 280); // Picture type
-
     $id = Insert(1, 0, USER, $user, "Insert new user");
     Insert($id, 1, EMAIL, $email, "Insert email");
-    Insert($id, 1, ROLE, $role, "Insert User role link");
+    Insert($id, 1, 164, $role, "Insert User role link");
 
     // Insert registration date
     Insert($id, 1, DATE, date("Ymd"), "Insert date");
@@ -97,11 +109,9 @@ function newUser($user, $email, $role, $name = "", $picture = "") {
  * @return bool True if user exists, false otherwise
  */
 function userExists($email) {
-    global $z;
+    global $z, $connection;
 
-    define('USER', 1);
-
-    $email_escaped = addslashes($email);
+    $email_escaped = mysqli_real_escape_string($connection, $email);
     $result = Exec_sql("SELECT 1 FROM `$z` WHERE val='$email_escaped' AND t=" . USER, "Check user name uniquity");
 
     $row = mysqli_fetch_array($result);
@@ -116,13 +126,6 @@ function userExists($email) {
  */
 function getUserById($userId) {
     global $z;
-
-    define('USER', 1);
-    define('TOKEN', 2);
-    define('XSRF', 3);
-    define('PASSWORD', 20);
-    define('ACTIVITY', 4);
-    define('EMAIL', 18);
 
     $result = Exec_sql("SELECT user.val user, user.id uid, token.id tok, token.val token,
                               xsrf.id xsrf, act.id act, pwd.val pwd, pwd.id pid, email.val email
