@@ -46,13 +46,9 @@ require_once __DIR__ . '/db_helpers.php';
 require_once __DIR__ . '/email_helpers.php';
 require_once __DIR__ . '/auth_helpers.php';
 
-// Type constants
-define('USER', 1);
-define('EMAIL', 18);
-define('PASSWORD', 20);
-define('TOKEN', 2);
-define('AFFILIATE', 1012);
-define('CAMPAIGN', 304);
+// Additional type constants not in db_helpers.php
+if (!defined('AFFILIATE')) define('AFFILIATE', 1012);
+if (!defined('CAMPAIGN'))  define('CAMPAIGN',  304);
 
 try {
     // Get parameters - support both parameter naming conventions
@@ -150,7 +146,7 @@ try {
     );
 
     // Send confirmation email to user
-    $confirmation_link = "https://$server_name/api/confirm.php?u=$userId&c=$confirmToken";
+    $confirmation_link = "https://$server_name/my/register?u=$userId&c=$confirmToken";
 
     $email_body = t9n("[RU]\r\nЗдравствуйте![EN]Hello my friend,") . "\r\n\r\n"
         . t9n("[RU]Для подтверждения регистрации пройдите по ссылке:[EN]To complete the registration click the following link:")
@@ -163,9 +159,9 @@ try {
         . ":\r\nhttps://$server_name/$db?login=$db"
         . "\r\n\r\n" . t9n("[RU]С уважением,\r\nКоманда Интеграл[EN]Best regards,\r\nIdeaV team")
         . "\r\n\r\n" . t9n("[RU]Если вы не хотите получать от нас писем, связанных с регистрацией, вы можете отписаться от оповещений:"
-            . "\r\nhttps://$server_name/api/confirm.php?optout=$userId"
+            . "\r\nhttps://$server_name/my/register?optout=$userId"
             . "[EN]In case you do not want to receive messages regarding your registration, unsubscribe here:"
-            . "\r\nhttps://$server_name/api/confirm.php?optout=$userId");
+            . "\r\nhttps://$server_name/my/register?optout=$userId");
 
     mysendmail(
         $email,
