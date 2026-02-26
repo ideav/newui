@@ -22,6 +22,9 @@ class CabinetController {
         // Setup menu navigation
         this.setupMenuNavigation();
 
+        // Setup sidebar toggle
+        this.setupSidebarToggle();
+
         // Setup form handlers
         this.setupFormHandlers();
 
@@ -53,6 +56,24 @@ class CabinetController {
         }
         console.log('[cabinet] No auth cookie found');
         return false;
+    }
+
+    setupSidebarToggle() {
+        const sidebar = document.getElementById('cabinet-sidebar');
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        if (!sidebar || !toggleBtn) return;
+
+        // Restore collapsed state from localStorage
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+            toggleBtn.title = 'Развернуть меню';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+            toggleBtn.title = isCollapsed ? 'Развернуть меню' : 'Свернуть меню';
+        });
     }
 
     setupMenuNavigation() {
@@ -523,7 +544,9 @@ class CabinetController {
             themeIcon.textContent = isDark ? '☀️' : '🌙';
         }
         if (themeValue) {
-            themeValue.textContent = this.i18n.t(isDark ? 'nav.light' : 'nav.dark');
+            const key = isDark ? 'nav.light' : 'nav.dark';
+            themeValue.textContent = this.i18n.t(key);
+            themeValue.setAttribute('data-i18n', key);
         }
     }
 
