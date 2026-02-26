@@ -667,7 +667,7 @@ class TablesController {
             vars.append('t', type);    // Base type ID
             vars.append('val', name);  // Table name
 
-            const response = await fetch('/apix/_d_new?JSON=1', {
+            const response = await fetch('/' + db + '/_d_new?JSON=1', {
                 method: 'POST',
                 credentials: 'include',
                 body: vars
