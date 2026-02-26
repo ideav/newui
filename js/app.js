@@ -1,52 +1,112 @@
-// API Configuration
-class ApiConfig {
+// ============================================================
+// Internationalization (i18n)
+// ============================================================
+const I18N = {
+    ru: {
+        'page.title': 'Главная',
+        'nav.dark': 'Темная',
+        'nav.light': 'Светлая',
+        'nav.login': 'Войти',
+        'nav.cabinet': 'Личный кабинет',
+        'welcome.title': 'Добро пожаловать!',
+        'welcome.subtitle': 'Сервис для работы с вашими данными.',
+        'auth.loginTab': 'Вход',
+        'auth.registerTab': 'Регистрация',
+        'auth.loginTitle': 'Вход',
+        'auth.loginSubtitle': 'Войдите в свой аккаунт',
+        'auth.registerTitle': 'Регистрация',
+        'auth.registerSubtitle': 'Создайте новый аккаунт',
+        'auth.email': 'Email адрес',
+        'auth.password': 'Пароль',
+        'auth.confirmPassword': 'Подтвердите пароль',
+        'auth.loginBtn': 'Войти',
+        'auth.registerBtn': 'Зарегистрироваться',
+        'auth.or': 'или',
+        'auth.yandex': 'Яндекс',
+        'auth.close': '✕ Закрыть',
+        'msg.passwordMismatch': 'Пароли не совпадают',
+        'msg.passwordShort': 'Пароль должен содержать минимум 6 символов',
+        'msg.loginSuccess': 'Вход выполнен успешно!',
+        'msg.registerSuccess': 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
+        'msg.loginError': 'Ошибка входа: ',
+        'msg.registerError': 'Ошибка регистрации: '
+    },
+    en: {
+        'page.title': 'Home',
+        'nav.dark': 'Dark',
+        'nav.light': 'Light',
+        'nav.login': 'Sign In',
+        'nav.cabinet': 'Personal Cabinet',
+        'welcome.title': 'Welcome!',
+        'welcome.subtitle': 'Service for working with your data.',
+        'auth.loginTab': 'Sign In',
+        'auth.registerTab': 'Register',
+        'auth.loginTitle': 'Sign In',
+        'auth.loginSubtitle': 'Sign in to your account',
+        'auth.registerTitle': 'Register',
+        'auth.registerSubtitle': 'Create a new account',
+        'auth.email': 'Email address',
+        'auth.password': 'Password',
+        'auth.confirmPassword': 'Confirm password',
+        'auth.loginBtn': 'Sign In',
+        'auth.registerBtn': 'Register',
+        'auth.or': 'or',
+        'auth.yandex': 'Yandex',
+        'auth.close': '✕ Close',
+        'msg.passwordMismatch': 'Passwords do not match',
+        'msg.passwordShort': 'Password must be at least 6 characters',
+        'msg.loginSuccess': 'Signed in successfully!',
+        'msg.registerSuccess': 'Registration successful. Please check your email for confirmation.',
+        'msg.loginError': 'Login error: ',
+        'msg.registerError': 'Registration error: '
+    }
+};
+
+class I18nManager {
     constructor() {
-        this.host = localStorage.getItem('apiHost') || '';
-        this.db = localStorage.getItem('apiDb') || '';
-        this.yandexClientId = localStorage.getItem('yandexClientId') || '';
-        this.googleClientId = localStorage.getItem('googleClientId') || '';
+        this.lang = localStorage.getItem('lang') || 'ru';
     }
 
-    setConfig(host, db, yandexClientId = '', googleClientId = '') {
-        this.host = host;
-        this.db = db;
-        this.yandexClientId = yandexClientId;
-        this.googleClientId = googleClientId;
-        localStorage.setItem('apiHost', host);
-        localStorage.setItem('apiDb', db);
-        localStorage.setItem('yandexClientId', yandexClientId);
-        localStorage.setItem('googleClientId', googleClientId);
+    t(key) {
+        return (I18N[this.lang] && I18N[this.lang][key]) || (I18N['ru'][key]) || key;
     }
 
-    getConfig() {
-        return {
-            host: this.host,
-            db: this.db,
-            yandexClientId: this.yandexClientId,
-            googleClientId: this.googleClientId
-        };
+    setLang(lang) {
+        if (I18N[lang]) {
+            this.lang = lang;
+            localStorage.setItem('lang', lang);
+            this.applyAll();
+        }
     }
 
-    isConfigured() {
-        return this.host && this.db;
+    toggleLang() {
+        const langs = Object.keys(I18N);
+        const idx = langs.indexOf(this.lang);
+        this.setLang(langs[(idx + 1) % langs.length]);
     }
 
-    hasYandexAuth() {
-        return this.yandexClientId && this.yandexClientId.length > 0;
-    }
-
-    hasGoogleAuth() {
-        return this.googleClientId && this.googleClientId.length > 0;
-    }
-
-    getBaseUrl() {
-        return `https://${this.host}/${this.db}`;
+    applyAll() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = this.t(key);
+        });
+        document.title = this.t('page.title');
+        const langToggle = document.getElementById('lang-toggle');
+        if (langToggle) langToggle.textContent = this.lang.toUpperCase();
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            themeToggle.innerHTML = (isDark ? '☀️ ' : '🌙 ') + '<span data-i18n="nav.' + (isDark ? 'light' : 'dark') + '">' + this.t(isDark ? 'nav.light' : 'nav.dark') + '</span>';
+        }
     }
 }
 
+// ============================================================
 // Theme management
+// ============================================================
 class ThemeManager {
-    constructor() {
+    constructor(i18n) {
+        this.i18n = i18n;
         this.theme = localStorage.getItem('theme') || 'light';
         this.applyTheme();
     }
@@ -65,704 +125,498 @@ class ThemeManager {
     updateThemeButton() {
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
-            themeToggle.textContent = this.theme === 'light' ? '🌙 Темная' : '☀️ Светлая';
+            const isDark = this.theme === 'dark';
+            const labelKey = isDark ? 'nav.light' : 'nav.dark';
+            themeToggle.innerHTML = (isDark ? '☀️ ' : '🌙 ') + '<span data-i18n="' + labelKey + '">' + this.i18n.t(labelKey) + '</span>';
         }
     }
 }
 
-// Authentication management
-class AuthManager {
+// ============================================================
+// Cookie utilities
+// ============================================================
+const CookieUtil = {
+    get(name) {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+    },
+    delete(name) {
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+    },
+    getAllIdb() {
+        // Returns array of db names for all idb_* cookies found
+        const result = [];
+        const cookies = document.cookie.split(';');
+        for (const c of cookies) {
+            const trimmed = c.trim();
+            if (trimmed.startsWith('idb_')) {
+                const name = trimmed.split('=')[0].trim();
+                const dbName = name.slice(4); // remove 'idb_' prefix
+                if (dbName) result.push(dbName);
+            }
+        }
+        return result;
+    }
+};
+
+// ============================================================
+// API Configuration
+// ============================================================
+class ApiConfig {
+    constructor() {
+        this.host = localStorage.getItem('apiHost') || window.location.hostname;
+        this.yandexClientId = localStorage.getItem('yandexClientId') || '';
+    }
+
+    getBaseUrl(db) {
+        return 'https://' + this.host + '/' + db;
+    }
+
+    hasYandexAuth() {
+        return !!(this.yandexClientId && this.yandexClientId.length > 0);
+    }
+}
+
+// ============================================================
+// Token validation
+// ============================================================
+async function validateToken(host, dbName) {
+    // GET https://{host}/{db}/xsrf?JSON
+    // Returns { _xsrf, token, user, ... } on success; on failure logs and deletes cookie
+    const url = 'https://' + host + '/' + dbName + '/xsrf?JSON';
+    try {
+        const response = await fetch(url, { method: 'GET', credentials: 'include' });
+        if (!response.ok) {
+            console.log('[auth] xsrf check failed for ' + dbName + ': HTTP ' + response.status);
+            CookieUtil.delete('idb_' + dbName);
+            return null;
+        }
+        const data = await response.json();
+        if (!data || !data._xsrf) {
+            console.log('[auth] xsrf check: no valid token for ' + dbName, data);
+            CookieUtil.delete('idb_' + dbName);
+            return null;
+        }
+        return data;
+    } catch (err) {
+        console.log('[auth] xsrf check error for ' + dbName + ':', err);
+        CookieUtil.delete('idb_' + dbName);
+        return null;
+    }
+}
+
+// ============================================================
+// Yandex OAuth
+// ============================================================
+class YandexAuthManager {
     constructor(apiConfig) {
         this.apiConfig = apiConfig;
-        this.currentUser = this.loadUser();
-        this.xsrfToken = localStorage.getItem('xsrfToken') || '';
-        this.authToken = localStorage.getItem('authToken') || '';
-    }
-
-    loadUser() {
-        const userJson = localStorage.getItem('currentUser');
-        return userJson ? JSON.parse(userJson) : null;
-    }
-
-    saveUser(user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUser = user;
-    }
-
-    clearUser() {
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('xsrfToken');
-        localStorage.removeItem('authToken');
-        this.currentUser = null;
-        this.xsrfToken = '';
-        this.authToken = '';
-    }
-
-    isAuthenticated() {
-        return this.currentUser !== null && this.currentUser.user !== 'guest';
-    }
-
-    async checkAuth() {
-        if (!this.apiConfig.isConfigured()) {
-            console.log('API not configured, using localStorage mode');
-            return { success: false, mode: 'localStorage', message: 'API not configured' };
-        }
-
-        try {
-            const url = `${this.apiConfig.getBaseUrl()}/xsrf`;
-            const response = await fetch(url, {
-                method: 'GET',
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            // Save XSRF token for POST requests
-            this.xsrfToken = data._xsrf || '';
-            localStorage.setItem('xsrfToken', this.xsrfToken);
-
-            // Save user info
-            const user = {
-                user: data.user || 'guest',
-                role: data.role || 'guest',
-                id: data.id || '',
-                token: data.token || ''
-            };
-
-            this.saveUser(user);
-
-            if (data.token) {
-                this.authToken = data.token;
-                localStorage.setItem('authToken', data.token);
-            }
-
-            return {
-                success: true,
-                mode: 'api',
-                user: user,
-                isGuest: user.user === 'guest'
-            };
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            return {
-                success: false,
-                mode: 'localStorage',
-                message: error.message
-            };
-        }
-    }
-
-    async register(email, password) {
-        if (!this.apiConfig.isConfigured()) {
-            return this.registerLocalStorage(email, password);
-        }
-
-        try {
-            const url = `${this.apiConfig.getBaseUrl()}/_m_new/18?up=1&next_act=inform`;
-            const formData = new URLSearchParams();
-            formData.append('_xsrf', this.xsrfToken);
-            formData.append('t18', email);
-            formData.append('t20', password);
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData.toString(),
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.error || data.msg) {
-                return {
-                    success: !data.error,
-                    message: data.msg || 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
-                    mode: 'api'
-                };
-            }
-
-            return {
-                success: true,
-                message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
-                mode: 'api'
-            };
-        } catch (error) {
-            console.error('Registration failed:', error);
-            return {
-                success: false,
-                message: `Ошибка регистрации: ${error.message}`,
-                mode: 'api'
-            };
-        }
-    }
-
-    registerLocalStorage(email, password) {
-        // Store pending user (waiting for email confirmation)
-        const users = this.getUsers();
-
-        // Check if email already exists
-        if (users.some(u => u.email === email)) {
-            return { success: false, message: 'Этот email уже зарегистрирован' };
-        }
-
-        const confirmationToken = this.generateToken();
-        const newUser = {
-            email,
-            password, // In production, this should be hashed
-            emailConfirmed: false,
-            confirmationToken,
-            createdAt: new Date().toISOString()
-        };
-
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
-
-        return {
-            success: true,
-            confirmationToken,
-            message: 'Регистрация прошла успешно. Проверьте вашу почту для подтверждения.',
-            mode: 'localStorage'
-        };
-    }
-
-    confirmEmail(token) {
-        const users = this.getUsers();
-        const user = users.find(u => u.confirmationToken === token);
-
-        if (!user) {
-            return { success: false, message: 'Неверный токен подтверждения' };
-        }
-
-        user.emailConfirmed = true;
-        localStorage.setItem('users', JSON.stringify(users));
-
-        return { success: true, message: 'Email подтвержден успешно!' };
-    }
-
-    async login(email, password) {
-        if (!this.apiConfig.isConfigured()) {
-            return this.loginLocalStorage(email, password);
-        }
-
-        try {
-            const url = `${this.apiConfig.getBaseUrl()}/auth?JSON`;
-            const formData = new URLSearchParams();
-            formData.append('db', this.apiConfig.db);
-            formData.append('login', email);
-            formData.append('pwd', password);
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: formData.toString(),
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.msg && data.msg !== '') {
-                return {
-                    success: false,
-                    message: data.msg,
-                    mode: 'api'
-                };
-            }
-
-            // Save tokens and user info
-            this.xsrfToken = data._xsrf || '';
-            this.authToken = data.token || '';
-            localStorage.setItem('xsrfToken', this.xsrfToken);
-            localStorage.setItem('authToken', this.authToken);
-
-            const user = {
-                user: email,
-                id: data.id || '',
-                token: data.token || '',
-                role: 'user'
-            };
-
-            this.saveUser(user);
-
-            return {
-                success: true,
-                message: 'Вход выполнен успешно!',
-                mode: 'api'
-            };
-        } catch (error) {
-            console.error('Login failed:', error);
-            return {
-                success: false,
-                message: `Ошибка входа: ${error.message}`,
-                mode: 'api'
-            };
-        }
-    }
-
-    loginLocalStorage(email, password) {
-        const users = this.getUsers();
-        const user = users.find(u => u.email === email && u.password === password);
-
-        if (!user) {
-            return { success: false, message: 'Неверный email или пароль' };
-        }
-
-        if (!user.emailConfirmed) {
-            return { success: false, message: 'Пожалуйста, подтвердите ваш email перед входом' };
-        }
-
-        this.saveUser(user);
-        return { success: true, message: 'Вход выполнен успешно!' };
-    }
-
-    logout() {
-        this.clearUser();
-        window.location.href = 'login.html';
-    }
-
-    getUsers() {
-        const usersJson = localStorage.getItem('users');
-        return usersJson ? JSON.parse(usersJson) : [];
-    }
-
-    generateToken() {
-        return Math.random().toString(36).substring(2) + Date.now().toString(36);
-    }
-
-    getUserInitial() {
-        if (this.currentUser) {
-            const userField = this.currentUser.user || this.currentUser.email || '';
-            if (userField && userField !== 'guest') {
-                return userField.charAt(0).toUpperCase();
-            }
-        }
-        return 'G';
-    }
-
-    getUserEmail() {
-        if (this.currentUser) {
-            return this.currentUser.user || this.currentUser.email || 'guest';
-        }
-        return 'guest';
-    }
-}
-
-// Yandex OAuth Authentication Manager
-class YandexAuthManager {
-    constructor(apiConfig, authManager) {
-        this.apiConfig = apiConfig;
-        this.authManager = authManager;
-        this.redirectUri = `${window.location.origin}/callback.html`;
+        // Yandex redirects to auth.asp on the current host (ideav.ru)
+        this.redirectUri = 'https://ideav.ru/auth.asp';
     }
 
     isEnabled() {
         return this.apiConfig.hasYandexAuth();
     }
 
-    getAuthUrl() {
+    initiateLogin() {
         if (!this.isEnabled()) {
-            return null;
+            alert('Yandex OAuth не настроен. Укажите Client ID в настройках.');
+            return;
         }
-
         const params = new URLSearchParams({
             response_type: 'token',
             client_id: this.apiConfig.yandexClientId,
             redirect_uri: this.redirectUri
         });
-
-        return `https://oauth.yandex.ru/authorize?${params.toString()}`;
-    }
-
-    initiateLogin() {
-        const authUrl = this.getAuthUrl();
-        if (authUrl) {
-            window.location.href = authUrl;
-        } else {
-            alert('Yandex OAuth не настроен. Пожалуйста, настройте Client ID в настройках.');
-        }
-    }
-
-    async handleCallback() {
-        // Parse token from URL fragment
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const expiresIn = params.get('expires_in');
-
-        if (!accessToken) {
-            throw new Error('Не удалось получить токен доступа от Yandex');
-        }
-
-        // Get user info from Yandex
-        const userInfo = await this.getUserInfo(accessToken);
-
-        // Save user data
-        const user = {
-            user: userInfo.default_email || userInfo.login,
-            email: userInfo.default_email,
-            id: userInfo.id,
-            token: accessToken,
-            role: 'user',
-            yandexId: userInfo.id,
-            displayName: userInfo.display_name,
-            realName: userInfo.real_name,
-            avatarId: userInfo.default_avatar_id
-        };
-
-        this.authManager.saveUser(user);
-        localStorage.setItem('yandexAccessToken', accessToken);
-        localStorage.setItem('yandexTokenExpiry', Date.now() + (expiresIn * 1000));
-
-        return user;
-    }
-
-    async getUserInfo(accessToken) {
-        const response = await fetch('https://login.yandex.ru/info?format=json', {
-            method: 'GET',
-            headers: {
-                'Authorization': `OAuth ${accessToken}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Ошибка получения данных пользователя: ${response.status}`);
-        }
-
-        return await response.json();
-    }
-
-    isTokenValid() {
-        const token = localStorage.getItem('yandexAccessToken');
-        const expiry = localStorage.getItem('yandexTokenExpiry');
-
-        if (!token || !expiry) {
-            return false;
-        }
-
-        return Date.now() < parseInt(expiry);
+        window.location.href = 'https://oauth.yandex.ru/authorize?' + params.toString();
     }
 }
 
-// Google OAuth Authentication Manager
-class GoogleAuthManager {
-    constructor(apiConfig, authManager) {
+// ============================================================
+// Authentication & UI controller
+// ============================================================
+class AuthManager {
+    constructor(apiConfig, i18n) {
         this.apiConfig = apiConfig;
-        this.authManager = authManager;
+        this.i18n = i18n;
+        this.validDbs = []; // list of db names with valid tokens, ordered (idb_my first)
+        this.selectedDb = null;
     }
 
-    isEnabled() {
-        return this.apiConfig.hasGoogleAuth();
-    }
-
-    getRedirectUri() {
-        // Use the Integram backend callback endpoint (/auth.asp) if API is configured,
-        // otherwise fall back to local callback.html
-        if (this.apiConfig.isConfigured()) {
-            return `https://${this.apiConfig.host}/auth.asp`;
-        }
-        return `${window.location.origin}/callback.html`;
-    }
-
-    getAuthUrl() {
-        if (!this.isEnabled()) {
-            return null;
+    async init() {
+        const dbNames = CookieUtil.getAllIdb();
+        if (dbNames.length === 0) {
+            this.showLoginButton();
+            return;
         }
 
-        const redirectUri = this.getRedirectUri();
-        // Pass the database name as state for multi-tenant support (as integram.io does)
-        const state = this.apiConfig.db ? encodeURIComponent(this.apiConfig.db) : '';
-        const stateParam = state ? `&state=${state}` : '';
+        // Sort: idb_my first, then others
+        dbNames.sort((a, b) => {
+            if (a === 'my') return -1;
+            if (b === 'my') return 1;
+            return a.localeCompare(b);
+        });
 
-        return `https://accounts.google.com/o/oauth2/auth?client_id=${this.apiConfig.googleClientId}`
-            + `&redirect_uri=${encodeURIComponent(redirectUri)}`
-            + `&response_type=code`
-            + `&scope=https://www.googleapis.com/auth/userinfo.email%20https://www.googleapis.com/auth/userinfo.profile`
-            + stateParam;
-    }
+        // Validate token for each db
+        const host = this.apiConfig.host;
+        const validationResults = await Promise.all(
+            dbNames.map(async (db) => {
+                const data = await validateToken(host, db);
+                return { db, valid: !!data };
+            })
+        );
 
-    initiateLogin() {
-        const authUrl = this.getAuthUrl();
-        if (authUrl) {
-            localStorage.setItem('pendingOAuthProvider', 'google');
-            window.location.href = authUrl;
+        this.validDbs = validationResults.filter(r => r.valid).map(r => r.db);
+
+        if (this.validDbs.length === 0) {
+            this.showLoginButton();
         } else {
-            alert('Google OAuth не настроен. Пожалуйста, настройте Client ID в настройках.');
+            this.selectedDb = this.validDbs[0];
+            this.showDbButton();
         }
     }
 
-    async handleCallback() {
-        // Authorization code flow: code is in URL query params, not hash
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-
-        if (!code) {
-            throw new Error('Не удалось получить код авторизации от Google');
-        }
-
-        // In authorization code flow, the backend (/auth.asp) handles token exchange.
-        // This callback is only reached when using the local callback.html fallback.
-        // Return a placeholder user indicating backend should handle the auth.
-        const user = {
-            user: 'google_user',
-            role: 'user',
-            googleAuthCode: code
-        };
-
-        this.authManager.saveUser(user);
-        return user;
+    getDbLabel(dbName) {
+        if (dbName === 'my') return this.i18n.t('nav.cabinet');
+        return dbName;
     }
 
-    isTokenValid() {
-        const token = localStorage.getItem('googleAccessToken');
-        const expiry = localStorage.getItem('googleTokenExpiry');
-
-        if (!token || !expiry) {
-            return false;
+    showLoginButton() {
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.textContent = this.i18n.t('nav.login');
+            loginBtn.style.display = '';
         }
+        const dbWrapper = document.getElementById('db-btn-wrapper');
+        if (dbWrapper) dbWrapper.style.display = 'none';
+    }
 
-        return Date.now() < parseInt(expiry);
+    showDbButton() {
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) loginBtn.style.display = 'none';
+
+        const dbWrapper = document.getElementById('db-btn-wrapper');
+        const dbBtn = document.getElementById('db-btn');
+        const dropdownToggle = document.getElementById('db-dropdown-toggle');
+        const dropdown = document.getElementById('db-dropdown');
+
+        if (!dbWrapper || !dbBtn) return;
+
+        dbBtn.textContent = this.getDbLabel(this.selectedDb);
+        dbWrapper.style.display = '';
+
+        if (this.validDbs.length > 1) {
+            dropdownToggle.style.display = '';
+            this.renderDropdown(dropdown);
+        } else {
+            dropdownToggle.style.display = 'none';
+            dropdown.style.display = 'none';
+        }
+    }
+
+    renderDropdown(dropdown) {
+        dropdown.innerHTML = '';
+        this.validDbs.forEach(db => {
+            const item = document.createElement('button');
+            item.className = 'db-dropdown-item';
+            item.textContent = this.getDbLabel(db);
+            if (db === this.selectedDb) item.classList.add('db-dropdown-item-active');
+            item.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                // Re-validate token for selected db before switching
+                const host = this.apiConfig.host;
+                const data = await validateToken(host, db);
+                if (!data) {
+                    // Invalid - remove from list and re-render
+                    this.validDbs = this.validDbs.filter(d => d !== db);
+                    if (this.validDbs.length === 0) {
+                        this.showLoginButton();
+                    } else {
+                        this.selectedDb = this.validDbs[0];
+                        this.showDbButton();
+                    }
+                } else {
+                    this.selectedDb = db;
+                    this.showDbButton();
+                }
+                dropdown.style.display = 'none';
+            });
+            dropdown.appendChild(item);
+        });
+    }
+
+    navigateToDb() {
+        if (this.selectedDb) {
+            window.location.href = 'https://' + this.apiConfig.host + '/' + this.selectedDb;
+        }
+    }
+
+    async login(email, password) {
+        const host = this.apiConfig.host;
+        // Try each known db or the default 'my'
+        // We use the /auth?JSON endpoint as implemented before
+        const db = 'my';
+        const url = 'https://' + host + '/' + db + '/auth?JSON';
+        try {
+            const formData = new URLSearchParams();
+            formData.append('db', db);
+            formData.append('login', email);
+            formData.append('pwd', password);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const data = await response.json();
+            if (data.msg && data.msg !== '') {
+                return { success: false, message: data.msg };
+            }
+            return { success: true, message: this.i18n.t('msg.loginSuccess') };
+        } catch (err) {
+            console.error('[auth] login error:', err);
+            return { success: false, message: this.i18n.t('msg.loginError') + err.message };
+        }
+    }
+
+    async register(email, password) {
+        const host = this.apiConfig.host;
+        const db = 'my';
+        // First get xsrf token
+        const xsrfData = await validateToken(host, db);
+        const xsrfToken = xsrfData ? (xsrfData._xsrf || '') : '';
+
+        const url = 'https://' + host + '/' + db + '/_m_new/18?up=1&next_act=inform';
+        try {
+            const formData = new URLSearchParams();
+            formData.append('_xsrf', xsrfToken);
+            formData.append('t18', email);
+            formData.append('t20', password);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const data = await response.json();
+            if (data.error) {
+                return { success: false, message: data.error };
+            }
+            return { success: true, message: data.msg || this.i18n.t('msg.registerSuccess') };
+        } catch (err) {
+            console.error('[auth] register error:', err);
+            return { success: false, message: this.i18n.t('msg.registerError') + err.message };
+        }
     }
 }
 
-// Initialize theme and auth managers
-const themeManager = new ThemeManager();
-const apiConfig = new ApiConfig();
-const authManager = new AuthManager(apiConfig);
-const yandexAuth = new YandexAuthManager(apiConfig, authManager);
-const googleAuth = new GoogleAuthManager(apiConfig, authManager);
-
-// Theme toggle handler
-document.addEventListener('DOMContentLoaded', async () => {
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            themeManager.toggleTheme();
-        });
+// ============================================================
+// App initialization
+// ============================================================
+class App {
+    constructor() {
+        this.i18n = new I18nManager();
+        this.theme = new ThemeManager(this.i18n);
+        this.apiConfig = new ApiConfig();
+        this.auth = new AuthManager(this.apiConfig, this.i18n);
+        this.yandexAuth = new YandexAuthManager(this.apiConfig);
+        window._app = this;
     }
 
-    // Check authentication status with API if configured
-    if (apiConfig.isConfigured()) {
-        await authManager.checkAuth();
+    navigateToDb() {
+        this.auth.navigateToDb();
     }
 
-    // Show/hide OAuth auth buttons based on configuration
-    const loginDivider = document.getElementById('login-divider');
-    const registerDivider = document.getElementById('register-divider');
-    let hasAnyOAuth = false;
+    async init() {
+        // Apply i18n
+        this.i18n.applyAll();
 
-    // Google OAuth buttons
-    if (googleAuth.isEnabled()) {
-        const googleLoginBtn = document.getElementById('google-login-btn');
-        const googleRegisterBtn = document.getElementById('google-register-btn');
-
-        if (googleLoginBtn) {
-            googleLoginBtn.style.display = 'flex';
-            hasAnyOAuth = true;
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                this.theme.toggleTheme();
+                this.i18n.applyAll(); // refresh i18n keys after theme label update
+            });
         }
 
-        if (googleRegisterBtn) {
-            googleRegisterBtn.style.display = 'flex';
-            hasAnyOAuth = true;
+        // Lang toggle
+        const langToggle = document.getElementById('lang-toggle');
+        if (langToggle) {
+            langToggle.addEventListener('click', () => {
+                this.i18n.toggleLang();
+                // Update login button text if visible
+                const loginBtn = document.getElementById('login-btn');
+                if (loginBtn && loginBtn.style.display !== 'none') {
+                    loginBtn.textContent = this.i18n.t('nav.login');
+                }
+                // Re-render db button labels
+                if (this.auth.selectedDb) {
+                    this.auth.showDbButton();
+                }
+            });
         }
-    }
 
-    // Yandex OAuth buttons
-    if (yandexAuth.isEnabled()) {
+        // Show/hide Yandex OAuth buttons
+        if (this.yandexAuth.isEnabled()) {
+            const yandexLoginBtn = document.getElementById('yandex-login-btn');
+            const yandexRegisterBtn = document.getElementById('yandex-register-btn');
+            const yandexDivider = document.getElementById('yandex-divider');
+            const yandexRegDivider = document.getElementById('yandex-reg-divider');
+            if (yandexLoginBtn) { yandexLoginBtn.style.display = ''; }
+            if (yandexRegisterBtn) { yandexRegisterBtn.style.display = ''; }
+            if (yandexDivider) { yandexDivider.style.display = ''; }
+            if (yandexRegDivider) { yandexRegDivider.style.display = ''; }
+        }
+
+        // Yandex button handlers
         const yandexLoginBtn = document.getElementById('yandex-login-btn');
-        const yandexRegisterBtn = document.getElementById('yandex-register-btn');
-
         if (yandexLoginBtn) {
-            yandexLoginBtn.style.display = 'flex';
-            hasAnyOAuth = true;
+            yandexLoginBtn.addEventListener('click', () => this.yandexAuth.initiateLogin());
         }
-
+        const yandexRegisterBtn = document.getElementById('yandex-register-btn');
         if (yandexRegisterBtn) {
-            yandexRegisterBtn.style.display = 'flex';
-            hasAnyOAuth = true;
+            yandexRegisterBtn.addEventListener('click', () => this.yandexAuth.initiateLogin());
         }
-    }
 
-    // Show dividers if any OAuth is enabled
-    if (hasAnyOAuth) {
-        if (loginDivider) loginDivider.style.display = 'flex';
-        if (registerDivider) registerDivider.style.display = 'flex';
-    }
-
-    // Google login button handler
-    const googleLoginBtn = document.getElementById('google-login-btn');
-    if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', () => {
-            googleAuth.initiateLogin();
-        });
-    }
-
-    // Google register button handler
-    const googleRegisterBtn = document.getElementById('google-register-btn');
-    if (googleRegisterBtn) {
-        googleRegisterBtn.addEventListener('click', () => {
-            googleAuth.initiateLogin();
-        });
-    }
-
-    // Yandex login button handler
-    const yandexLoginBtn = document.getElementById('yandex-login-btn');
-    if (yandexLoginBtn) {
-        yandexLoginBtn.addEventListener('click', () => {
-            yandexAuth.initiateLogin();
-        });
-    }
-
-    // Yandex register button handler
-    const yandexRegisterBtn = document.getElementById('yandex-register-btn');
-    if (yandexRegisterBtn) {
-        yandexRegisterBtn.addEventListener('click', () => {
-            yandexAuth.initiateLogin();
-        });
-    }
-
-    // Update account info in navbar
-    const accountAvatar = document.getElementById('account-avatar');
-    const accountEmail = document.getElementById('account-email');
-
-    if (accountAvatar && accountEmail && authManager.currentUser) {
-        accountAvatar.textContent = authManager.getUserInitial();
-        accountEmail.textContent = authManager.getUserEmail();
-
-        // Hide account info if guest user
-        const accountInfo = document.querySelector('.account-info');
-        if (accountInfo && authManager.currentUser.user === 'guest') {
-            accountInfo.style.display = 'none';
+        // Login button: show auth panel
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.showAuthPanel());
         }
-    }
 
-    // Logout handler
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            authManager.logout();
-        });
-    }
+        // Close auth panel
+        const closeAuth = document.getElementById('close-auth');
+        if (closeAuth) {
+            closeAuth.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.hideAuthPanel();
+            });
+        }
 
-    // Registration form handler
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Tab switching
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        if (tabLogin) {
+            tabLogin.addEventListener('click', () => this.switchTab('login'));
+        }
+        if (tabRegister) {
+            tabRegister.addEventListener('click', () => this.switchTab('register'));
+        }
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            if (password !== confirmPassword) {
-                alert('Пароли не совпадают');
-                return;
-            }
-
-            if (password.length < 6) {
-                alert('Пароль должен содержать минимум 6 символов');
-                return;
-            }
-
-            const result = await authManager.register(email, password);
-
-            if (result.success) {
-                if (result.mode === 'localStorage' && result.confirmationToken) {
-                    // Show confirmation link (in production, this would be sent via email)
-                    const confirmationLink = `${window.location.origin}/confirm.html?token=${result.confirmationToken}`;
-                    localStorage.setItem('lastConfirmationLink', confirmationLink);
-                }
-                alert(result.message);
-
-                if (result.mode === 'api') {
-                    // For API mode, redirect to login since email will be sent
-                    window.location.href = 'login.html';
-                } else {
-                    window.location.href = 'registration-success.html';
-                }
-            } else {
-                alert(result.message);
-            }
-        });
-    }
-
-    // Login form handler
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            const result = await authManager.login(email, password);
-
-            if (result.success) {
-                window.location.href = 'index.html';
-            } else {
-                alert(result.message);
-            }
-        });
-    }
-
-    // Email confirmation handler
-    const confirmBtn = document.getElementById('confirm-email-btn');
-    if (confirmBtn) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-
-        if (token) {
-            confirmBtn.addEventListener('click', () => {
-                const result = authManager.confirmEmail(token);
-
+        // Login form
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const result = await this.auth.login(email, password);
                 if (result.success) {
-                    alert(result.message);
-                    window.location.href = 'login.html';
+                    this.hideAuthPanel();
+                    await this.auth.init();
                 } else {
                     alert(result.message);
                 }
             });
         }
-    }
 
-    // Show confirmation link on success page
-    const confirmationLinkEl = document.getElementById('confirmation-link');
-    if (confirmationLinkEl) {
-        const link = localStorage.getItem('lastConfirmationLink');
-        if (link) {
-            confirmationLinkEl.href = link;
-            confirmationLinkEl.textContent = link;
-        }
-    }
+        // Register form
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                const confirmPassword = document.getElementById('reg-confirm-password').value;
 
-    // Protect authenticated pages
-    const protectedPages = ['index.html', '/'];
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
-    if (protectedPages.some(page => currentPage.includes(page) || currentPage === '')) {
-        if (!authManager.isAuthenticated() && currentPage !== 'login.html' && currentPage !== 'register.html') {
-            const accountInfo = document.querySelector('.account-info');
-            if (accountInfo) {
-                // Only redirect if we're on the main page and not authenticated
-                if (currentPage === 'index.html' || currentPage === '') {
-                    window.location.href = 'login.html';
+                if (password !== confirmPassword) {
+                    alert(this.i18n.t('msg.passwordMismatch'));
+                    return;
                 }
-            }
+                if (password.length < 6) {
+                    alert(this.i18n.t('msg.passwordShort'));
+                    return;
+                }
+
+                const result = await this.auth.register(email, password);
+                alert(result.message);
+                if (result.success) {
+                    this.hideAuthPanel();
+                }
+            });
+        }
+
+        // Dropdown toggle
+        const dropdownToggle = document.getElementById('db-dropdown-toggle');
+        const dropdown = document.getElementById('db-dropdown');
+        if (dropdownToggle && dropdown) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = dropdown.style.display !== 'none';
+                dropdown.style.display = isVisible ? 'none' : '';
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                if (dropdown.style.display !== 'none') {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Check auth state from cookies
+        await this.auth.init();
+    }
+
+    showAuthPanel() {
+        const authPanel = document.getElementById('auth-panel');
+        if (authPanel) authPanel.style.display = '';
+        const welcomeSection = document.getElementById('welcome-section');
+        if (welcomeSection) welcomeSection.style.display = 'none';
+        this.switchTab('login');
+    }
+
+    hideAuthPanel() {
+        const authPanel = document.getElementById('auth-panel');
+        if (authPanel) authPanel.style.display = 'none';
+        const welcomeSection = document.getElementById('welcome-section');
+        if (welcomeSection) welcomeSection.style.display = '';
+    }
+
+    switchTab(tab) {
+        const loginSection = document.getElementById('login-section');
+        const registerSection = document.getElementById('register-section');
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+
+        if (tab === 'login') {
+            if (loginSection) loginSection.style.display = '';
+            if (registerSection) registerSection.style.display = 'none';
+            if (tabLogin) tabLogin.classList.add('auth-tab-active');
+            if (tabRegister) tabRegister.classList.remove('auth-tab-active');
+        } else {
+            if (loginSection) loginSection.style.display = 'none';
+            if (registerSection) registerSection.style.display = '';
+            if (tabLogin) tabLogin.classList.remove('auth-tab-active');
+            if (tabRegister) tabRegister.classList.add('auth-tab-active');
         }
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const app = new App();
+    app.init();
 });

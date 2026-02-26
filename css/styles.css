@@ -467,3 +467,114 @@ body {
 .btn-logout:hover {
     background-color: var(--bg-secondary);
 }
+
+/* Primary nav button (Войти / db name) */
+.btn-primary-nav {
+    background-color: var(--button-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary-nav:hover {
+    background-color: var(--button-primary-hover);
+}
+
+/* DB button wrapper with optional dropdown */
+.db-btn-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.db-btn-wrapper .btn-primary-nav {
+    border-radius: 6px 0 0 6px;
+}
+
+.db-dropdown-toggle {
+    background-color: var(--button-primary);
+    color: white;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.3);
+    border-radius: 0 6px 6px 0;
+    padding: 0.5rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background-color 0.3s ease;
+    line-height: 1;
+}
+
+.db-dropdown-toggle:hover {
+    background-color: var(--button-primary-hover);
+}
+
+.db-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px var(--nav-shadow);
+    min-width: 160px;
+    z-index: 200;
+    overflow: hidden;
+}
+
+.db-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+.db-dropdown-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.db-dropdown-item-active {
+    font-weight: 600;
+    color: var(--button-primary);
+}
+
+/* Auth tabs */
+.auth-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.auth-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.5rem 1.25rem;
+    margin-bottom: -2px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-tab:hover {
+    color: var(--text-primary);
+}
+
+.auth-tab-active {
+    color: var(--button-primary);
+    border-bottom-color: var(--button-primary);
+}
