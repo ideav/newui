@@ -33,6 +33,8 @@ const I18N = {
         // Cabinet translations
         'cabinet.title': 'Личный кабинет',
         'cabinet.logout': 'Выйти',
+        'cabinet.userMenu.language': 'Язык',
+        'cabinet.userMenu.theme': 'Тема',
         'cabinet.loading': 'Загрузка данных...',
         'cabinet.menu.profile': 'Профиль',
         'cabinet.menu.balance': 'Баланс',
@@ -155,6 +157,8 @@ const I18N = {
         // Cabinet translations
         'cabinet.title': 'Personal Cabinet',
         'cabinet.logout': 'Sign Out',
+        'cabinet.userMenu.language': 'Language',
+        'cabinet.userMenu.theme': 'Theme',
         'cabinet.loading': 'Loading data...',
         'cabinet.menu.profile': 'Profile',
         'cabinet.menu.balance': 'Balance',

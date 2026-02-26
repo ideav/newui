@@ -28,6 +28,9 @@ class CabinetController {
         // Setup copy buttons
         this.setupCopyButtons();
 
+        // Setup user menu dropdown
+        this.setupUserMenuDropdown();
+
         // Setup logout button
         this.setupLogout();
 
@@ -442,6 +445,86 @@ class CabinetController {
                 }
             });
         });
+    }
+
+    setupUserMenuDropdown() {
+        const menuToggle = document.getElementById('user-menu-toggle');
+        const menuDropdown = document.getElementById('user-menu-dropdown');
+        const menuWrapper = menuToggle ? menuToggle.closest('.user-menu-wrapper') : null;
+
+        if (!menuToggle || !menuDropdown) return;
+
+        // Toggle dropdown on click
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = menuDropdown.style.display !== 'none';
+            menuDropdown.style.display = isOpen ? 'none' : '';
+            if (menuWrapper) {
+                menuWrapper.classList.toggle('open', !isOpen);
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menuToggle.contains(e.target) && !menuDropdown.contains(e.target)) {
+                menuDropdown.style.display = 'none';
+                if (menuWrapper) {
+                    menuWrapper.classList.remove('open');
+                }
+            }
+        });
+
+        // Language toggle
+        const langToggle = document.getElementById('lang-toggle');
+        const langValue = document.getElementById('lang-value');
+        if (langToggle) {
+            langToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.i18n.toggleLang();
+                if (langValue) {
+                    langValue.textContent = this.i18n.lang.toUpperCase();
+                }
+                this.updateThemeMenuLabels();
+            });
+        }
+
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Use the theme manager from app.js if available
+                if (window._app && window._app.theme) {
+                    window._app.theme.toggleTheme();
+                } else {
+                    // Fallback: toggle manually
+                    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                }
+                this.updateThemeMenuLabels();
+            });
+        }
+
+        // Initialize labels
+        this.updateThemeMenuLabels();
+        if (langValue) {
+            langValue.textContent = this.i18n.lang.toUpperCase();
+        }
+    }
+
+    updateThemeMenuLabels() {
+        const themeIcon = document.getElementById('theme-icon');
+        const themeValue = document.getElementById('theme-value');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        if (themeIcon) {
+            themeIcon.textContent = isDark ? '☀️' : '🌙';
+        }
+        if (themeValue) {
+            themeValue.textContent = this.i18n.t(isDark ? 'nav.light' : 'nav.dark');
+        }
     }
 
     setupLogout() {

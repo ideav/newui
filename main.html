@@ -16,13 +16,30 @@
             </a>
         </div>
         <div class="navbar-right">
-            <button id="lang-toggle" class="theme-toggle" title="Switch language">RU</button>
-            <button id="theme-toggle" class="theme-toggle">🌙 <span data-i18n="nav.dark">Темная</span></button>
-            <div class="account-info">
-                <div id="account-avatar" class="account-avatar">U</div>
-                <span id="account-email" class="account-email">user@example.com</span>
+            <div class="user-menu-wrapper">
+                <button id="user-menu-toggle" class="account-info" type="button" title="Меню пользователя">
+                    <div id="account-avatar" class="account-avatar">U</div>
+                    <span id="account-email" class="account-email">user@example.com</span>
+                    <span class="user-menu-arrow">▼</span>
+                </button>
+                <div id="user-menu-dropdown" class="user-menu-dropdown" style="display: none;">
+                    <button id="lang-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon">🌐</span>
+                        <span data-i18n="cabinet.userMenu.language">Язык</span>
+                        <span class="user-menu-value" id="lang-value">RU</span>
+                    </button>
+                    <button id="theme-toggle" class="user-menu-item" type="button">
+                        <span class="user-menu-icon" id="theme-icon">🌙</span>
+                        <span data-i18n="cabinet.userMenu.theme">Тема</span>
+                        <span class="user-menu-value" id="theme-value" data-i18n="nav.dark">Темная</span>
+                    </button>
+                    <div class="user-menu-divider"></div>
+                    <button id="logout-btn" class="user-menu-item user-menu-item-danger" type="button">
+                        <span class="user-menu-icon">🚪</span>
+                        <span data-i18n="cabinet.logout">Выйти</span>
+                    </button>
+                </div>
             </div>
-            <button id="logout-btn" class="btn-logout" data-i18n="cabinet.logout">Выйти</button>
         </div>
     </nav>
 

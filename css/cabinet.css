@@ -1,3 +1,105 @@
+/* User Menu Dropdown */
+.user-menu-wrapper {
+    position: relative;
+}
+
+.user-menu-wrapper .account-info {
+    cursor: pointer;
+    border: none;
+    font: inherit;
+}
+
+.user-menu-wrapper .account-info:hover {
+    background-color: var(--border-color);
+}
+
+.user-menu-arrow {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.user-menu-wrapper.open .user-menu-arrow {
+    transform: rotate(180deg);
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--nav-shadow);
+    min-width: 220px;
+    z-index: 200;
+    overflow: hidden;
+    animation: userMenuSlideIn 0.15s ease-out;
+}
+
+@keyframes userMenuSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: background-color 0.2s ease;
+    gap: 0.75rem;
+}
+
+.user-menu-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.user-menu-icon {
+    font-size: 1.1rem;
+    width: 1.5rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.user-menu-value {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.user-menu-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.25rem 0;
+}
+
+.user-menu-item-danger {
+    color: #dc3545;
+}
+
+.user-menu-item-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+[data-theme="dark"] .user-menu-item-danger:hover {
+    background-color: rgba(220, 53, 69, 0.2);
+}
+
 /* Cabinet Layout */
 .cabinet-layout {
     display: flex;
