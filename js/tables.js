@@ -193,7 +193,7 @@ class TablesController {
             renameBtn.title = 'Переименовать';
             renameBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.renameFolder(folderName);
+                this.renameFolder(folderName, folderEl);
             });
 
             const deleteBtn = document.createElement('button');
@@ -418,25 +418,93 @@ class TablesController {
         }
     }
 
-    renameFolder(oldName) {
-        const newName = prompt('Новое название папки:', oldName);
-        if (newName && newName !== oldName && newName.trim()) {
-            // Check if name already exists
-            if (this.config[newName]) {
-                alert('Папка с таким названием уже существует');
-                return;
-            }
+    renameFolder(oldName, folderEl) {
+        const nameSpan = folderEl.querySelector('.folder-name');
+        if (!nameSpan || nameSpan.isEditing) return;
 
-            // Preserve order while renaming
-            const entries = Object.entries(this.config);
-            const index = entries.findIndex(([name]) => name === oldName);
-            if (index > -1) {
-                entries[index][0] = newName.trim();
-                this.config = Object.fromEntries(entries);
-                this.saveConfig();
-                this.render();
+        nameSpan.isEditing = true;
+        const originalName = oldName;
+
+        // Make the name editable
+        nameSpan.contentEditable = 'true';
+        nameSpan.classList.add('editing');
+        nameSpan.focus();
+
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(nameSpan);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        const finishEditing = (save) => {
+            if (!nameSpan.isEditing) return;
+            nameSpan.isEditing = false;
+            nameSpan.contentEditable = 'false';
+            nameSpan.classList.remove('editing');
+
+            const newName = nameSpan.textContent.trim();
+
+            if (save && newName && newName !== originalName) {
+                // Check if name already exists
+                if (this.config[newName]) {
+                    // Show error tooltip instead of alert
+                    this.showInlineError(nameSpan, 'Папка с таким названием уже существует');
+                    nameSpan.textContent = originalName;
+                    return;
+                }
+
+                // Preserve order while renaming
+                const entries = Object.entries(this.config);
+                const index = entries.findIndex(([name]) => name === originalName);
+                if (index > -1) {
+                    entries[index][0] = newName;
+                    this.config = Object.fromEntries(entries);
+                    this.saveConfig();
+                    this.render();
+                }
+            } else {
+                // Restore original name
+                nameSpan.textContent = originalName;
             }
-        }
+        };
+
+        // Handle blur (click outside)
+        nameSpan.addEventListener('blur', () => finishEditing(true), { once: true });
+
+        // Handle keyboard
+        nameSpan.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nameSpan.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                finishEditing(false);
+            }
+        });
+    }
+
+    showInlineError(element, message) {
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'inline-error-tooltip';
+        tooltip.textContent = message;
+
+        // Position tooltip
+        const rect = element.getBoundingClientRect();
+        tooltip.style.cssText = `
+            position: fixed;
+            left: ${rect.left}px;
+            top: ${rect.bottom + 4}px;
+            z-index: 10000;
+        `;
+
+        document.body.appendChild(tooltip);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            tooltip.remove();
+        }, 3000);
     }
 
     deleteFolder(folderName) {
