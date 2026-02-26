@@ -355,7 +355,7 @@ const CookieUtil = {
 class ApiConfig {
     constructor() {
         this.host = localStorage.getItem('apiHost') || window.location.hostname;
-        this.yandexClientId = localStorage.getItem('yandexClientId') || '';
+        this.yandexClientId = '959da92b09364e42bf4c7704db0b992f';
     }
 
     getBaseUrl(db) {
