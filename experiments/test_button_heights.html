@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Button Heights</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .test-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .height-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+        .height-info p {
+            margin: 5px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo" style="font-size: 24px;">Logo</span>
+        </div>
+        <div class="navbar-right">
+            <button id="theme-toggle" class="theme-toggle">🌙 Темная</button>
+
+            <!-- Test: DB button with dropdown -->
+            <div id="db-btn-wrapper" class="db-btn-wrapper">
+                <button id="db-btn" class="btn-primary-nav">Личный кабинет</button>
+                <button id="db-dropdown-toggle" class="db-dropdown-toggle" aria-label="Select database">▼</button>
+                <div id="db-dropdown" class="db-dropdown" style="display:none;">
+                    <a href="#" class="db-dropdown-item db-dropdown-item-active" target="my">Личный кабинет</a>
+                    <a href="#" class="db-dropdown-item" target="testdb">testdb</a>
+                    <a href="#" class="db-dropdown-item" target="another_db">another_db</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="test-container">
+        <h1>Button Height Test</h1>
+        <p>This page tests if #db-btn and #db-dropdown-toggle have the same height.</p>
+
+        <div class="height-info" id="height-info">
+            <p>Loading measurements...</p>
+        </div>
+
+        <h2>Visual Comparison</h2>
+        <p>Click the dropdown arrow (▼) to see the dropdown menu with database links.</p>
+        <p>Each link in the dropdown should open in a new tab named after the database.</p>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dbBtn = document.getElementById('db-btn');
+            const dropdownToggle = document.getElementById('db-dropdown-toggle');
+            const dropdown = document.getElementById('db-dropdown');
+            const infoDiv = document.getElementById('height-info');
+
+            // Measure heights
+            const dbBtnRect = dbBtn.getBoundingClientRect();
+            const toggleRect = dropdownToggle.getBoundingClientRect();
+
+            const dbBtnStyle = getComputedStyle(dbBtn);
+            const toggleStyle = getComputedStyle(dropdownToggle);
+
+            infoDiv.innerHTML = `
+                <p><strong>#db-btn:</strong></p>
+                <p>- Height: ${dbBtnRect.height}px</p>
+                <p>- Padding: ${dbBtnStyle.padding}</p>
+                <p>- Font-size: ${dbBtnStyle.fontSize}</p>
+                <p>- Line-height: ${dbBtnStyle.lineHeight}</p>
+                <hr style="margin: 10px 0; border-color: var(--border-color);">
+                <p><strong>#db-dropdown-toggle:</strong></p>
+                <p>- Height: ${toggleRect.height}px</p>
+                <p>- Padding: ${toggleStyle.padding}</p>
+                <p>- Font-size: ${toggleStyle.fontSize}</p>
+                <p>- Line-height: ${toggleStyle.lineHeight}</p>
+                <hr style="margin: 10px 0; border-color: var(--border-color);">
+                <p><strong>Result:</strong> ${Math.abs(dbBtnRect.height - toggleRect.height) < 1 ? '✅ Heights match!' : '❌ Heights do NOT match'}</p>
+            `;
+
+            // Toggle dropdown
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? '' : 'none';
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -526,29 +526,20 @@ class AuthManager {
     renderDropdown(dropdown) {
         dropdown.innerHTML = '';
         this.validDbs.forEach(db => {
-            const item = document.createElement('button');
+            // Use anchor element to open db in new tab with target="{db name}"
+            const item = document.createElement('a');
             item.className = 'db-dropdown-item';
             item.textContent = this.getDbLabel(db);
+            item.href = 'https://' + this.apiConfig.host + '/' + db;
+            item.target = db; // Open in tab named after the database
             if (db === this.selectedDb) item.classList.add('db-dropdown-item-active');
-            item.addEventListener('click', async (e) => {
+            item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Re-validate token for selected db before switching
-                const host = this.apiConfig.host;
-                const data = await validateToken(host, db);
-                if (!data) {
-                    // Invalid - remove from list and re-render
-                    this.validDbs = this.validDbs.filter(d => d !== db);
-                    if (this.validDbs.length === 0) {
-                        this.showLoginButton();
-                    } else {
-                        this.selectedDb = this.validDbs[0];
-                        this.showDbButton();
-                    }
-                } else {
-                    this.selectedDb = db;
-                    this.showDbButton();
-                }
+                // Select this db as current and close dropdown
+                this.selectedDb = db;
+                this.showDbButton();
                 dropdown.style.display = 'none';
+                // Link will navigate to the db in new tab via href and target
             });
             dropdown.appendChild(item);
         });
