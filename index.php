@@ -228,7 +228,7 @@ elseif(($z == "my") && !empty($_GET['code'])){
     	    }
     	    else
     	        $token = $row["token"];
-        	setcookie($z, $token, time() + 2592000*12, "/"); # 30*12 days
+        	setcookie("idb_$z", $token, time() + 2592000*12, "/"); # 30*12 days
     	}
         else{
 			$GLOBALS["GLOBAL_VARS"]["token"] = md5(microtime(TRUE));
@@ -241,7 +241,7 @@ elseif(($z == "my") && !empty($_GET['code'])){
             #Insert($id, 1, 1145, date("Ymd", strtotime("+1 months") + $GLOBALS["tzone"]), "Insert new Plan date");
             if(isset($_COOKIE["_aff"]))
                 Insert($id, 1, 1012, (int)$_COOKIE["_aff"], "Insert the googel affiliate ref");
-        	setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], time() + 2592000*12, "/"); # 30*12 days
+        	setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], time() + 2592000*12, "/"); # 30*12 days
         	createDb($id, $info["name"], $info["email"]);
         }
 		header("Location: ".(isset($_GET['state'])?$_GET['state']:"/$z"));
@@ -368,7 +368,7 @@ function createDb($id, $name, $email, $pwd=""){
 function updateTokens($row){
 	global $z;
 	$xsrf = $GLOBALS["GLOBAL_VARS"]["xsrf"] = xsrf($token, $z);
-	setcookie($z, $token, time() + 2592000*12, "/"); # 30*12 days
+	setcookie("idb_$z", $token, time() + 2592000*12, "/"); # 30*12 days
 	if($row["tok"])
     	$token = $GLOBALS["GLOBAL_VARS"]["token"] = $row["token"];
 	else{
@@ -411,7 +411,7 @@ function newDb($db, $template, $name, $email, $pwd){
 	Insert($id, 1, ACTIVITY, microtime(TRUE), "Save activity time DB");
     if(strlen($pwd))
         Insert($id, 1, PASSWORD, hash('sha512', Salt($z, $pwd)), "Insert user password");
-	setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], time() + 2592000*12, "/"); # 30*12 days
+	setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], time() + 2592000*12, "/"); # 30*12 days
 	
 	# Create folders for files and templates
 	exec("cp -r templates/custom/$template templates/custom/$z");
@@ -1133,12 +1133,12 @@ function Validate_Token(){ # Validates the cookie token and gathers the user per
 	if(isset($_POST["secret"])){
 		$tok = addslashes($_POST["secret"]);
 		$typ = SECRET;
-		setcookie($z, $tok, 0, "/");  # The cookie to be deleted upon the session close
+		setcookie("idb_$z", $tok, 0, "/");  # The cookie to be deleted upon the session close
 	}
 	elseif(isset($_GET["secret"])){
 		$tok = addslashes($_GET["secret"]);
 		$typ = SECRET;
-		setcookie($z, $tok, 0, "/");  # The cookie to be deleted upon the session close
+		setcookie("idb_$z", $tok, 0, "/");  # The cookie to be deleted upon the session close
 	}
 	elseif(isset($dumpAPI))
 	{
@@ -1233,7 +1233,7 @@ function Validate_Token(){ # Validates the cookie token and gathers the user per
             else
                 Exec_sql("INSERT INTO $z (up, ord, t, val) VALUES (".$row["id"].",0,".ACTIVITY.",".microtime(TRUE).")", "Set activity time", FALSE);
             if($typ === SECRET){
-        		setcookie($z, "", time() - 3600, "/");  # Remove the password cookie
+        		setcookie("idb_$z", "", time() - 3600, "/");  # Remove the password cookie
             	if(!$row["xsrf"])
             		Insert($row["id"], 1, XSRF, $xsrf=xsrf($tok, $GLOBALS["GLOBAL_VARS"]["user"]), "Save xsrf for secret");
         		$data_tok = Exec_sql("SELECT tok.id FROM $z tok WHERE tok.t=".TOKEN." AND tok.up=".$row["id"], "Check if token exists");
@@ -1273,7 +1273,7 @@ function Validate_Token(){ # Validates the cookie token and gathers the user per
     			Insert($row["u"], 1, XSRF, $xsrf, "Save guest xsrf");
     		else
     		    Update_Val($row["xsrf"], $xsrf);
-    		setcookie($z, "gtuoeksetn", time() + COOKIES_EXPIRE, "/"); # 30 days
+    		setcookie("idb_$z", "gtuoeksetn", time() + COOKIES_EXPIRE, "/"); # 30 days
 			if(isApi()){
                 getGrants($row["r"]);
     			$GLOBALS["GLOBAL_VARS"]["user"] = "guest";
@@ -1301,7 +1301,7 @@ function Validate_Token(){ # Validates the cookie token and gathers the user per
                 						." WHERE u.t=".USER." AND db.up=u.id AND db.val='".$row["val"]."' AND db.t=".DATABASE
                 					, "Seek cabinet");
             		if($row = mysqli_fetch_array($data_set)){
-                		setcookie($z, $row["val"], time() + 2592000*12, "/"); # 12*30 days
+                		setcookie("idb_$z", $row["val"], time() + 2592000*12, "/"); # 12*30 days
                 		login($z, "", "reenter");
             		}
         		}
@@ -1316,7 +1316,7 @@ function Validate_Token(){ # Validates the cookie token and gathers the user per
         		$data_set = Exec_sql("SELECT tok.val FROM $z u, $z tok WHERE u.t=".USER." AND tok.up=u.id AND u.val='$z' AND tok.t=".TOKEN
             					, "Get token in current db");
         		if($row = mysqli_fetch_array($data_set)){
-            		setcookie($z, $row["val"], time() + 2592000*12, "/"); # 12*30 days
+            		setcookie("idb_$z", $row["val"], time() + 2592000*12, "/"); # 12*30 days
             		login($z, "", "reenter");
         		}
     		}
@@ -1337,8 +1337,7 @@ function getGrants($r){
                         ."	LEFT JOIN $z del ON del.up=gr.id AND del.t=".DELETE
 						." WHERE gr.up=$r AND gr.t=".ROLE_OBJECT, "Get grants");
 	while($row = mysqli_fetch_array($data_set)){
-		$mask = $row["mask"] ?? '';
-		if(preg_match("/(\[.+\])/", $mask, $builtins)){	# An expression given
+		if(preg_match("/(\[.+\])/", $row["mask"] ?? "", $builtins)){	# An expression given
 			$v = BuiltIn($builtins[1]);
 			if($v == $builtins[1]){	# No Built in for this
 				$attrs = substr($v, 1, strlen($v) - 2);
@@ -1352,17 +1351,17 @@ function getGrants($r){
 				    $v = array_shift($v);
 				}
 			}
-			$v = preg_replace("/(\[.+\])/", $v, $mask);
+			$v = preg_replace("/(\[.+\])/", $v, $row["mask"]);
 		}
 		else
-			$v = "".$mask;
-		if(strlen($row["lev"] ?? ''))
+			$v = "".$row["mask"] ?? "";
+		if(strlen($row["lev"] ?? ""))
     		$GLOBALS["GRANTS"][$row["obj"]] = $row["lev"];
 		if(strlen($v))
 			$GLOBALS["GRANTS"]["mask"][$row["obj"]][$v] = $row["lev"];
-		if(strlen($row["exp"] ?? ''))
+		if(strlen($row["exp"] ?? ""))
 			$GLOBALS["GRANTS"]["EXPORT"][$row["obj"]] = "1";
-		if(strlen($row["del"] ?? ''))
+		if(strlen($row["del"] ?? ""))
 			$GLOBALS["GRANTS"]["DELETE"][$row["obj"]] = "1";
 	}
 	if(isset($GLOBALS["TRACE"]) && isset($GLOBALS["GRANTS"]))
@@ -1403,7 +1402,7 @@ function Format_Val($typ, $val){
         					$dm = isset($v[1]) ? (int)$v[1] : date("m");
         					$dd = (int)$v[0];
         					if(!checkdate($dm, $dd, $dy))
-        						$GLOBALS["warning"] = $GLOBALS["warning"] ?: $GLOBALS["warning"].t9n("[RU]Неверная дата[EN]Wrong date")." $val!<br>";
+        						$GLOBALS["warning"] = (isset($GLOBALS["warning"]) ? $GLOBALS["warning"] : "") . t9n("[RU]Неверная дата[EN]Wrong date")." $val!<br>";
         					$val = $dy.substr("0". $dm, -2).substr("0".$dd, -2);
     				    }
     				}
@@ -1429,8 +1428,8 @@ function Format_Val($typ, $val){
     				    $val = trim($val);
     				    if(preg_match("/^\d{4}[\.\/\-\,]\d{2}[\.\/\-\,]\d{2}/", $val))
         				    $val = preg_replace("/^(\d{4})(.)(\d{2})(.)(\d{2})/", "$5.$3.$1", $val);
-    					if(is_numeric($val) && $val > 10000)	# Timestamp is OK
-    						$val = (int)$val - $GLOBALS["tzone"];
+    					if(is_numeric($val) && ($val > 10000)) 	# Timestamp is OK
+    						$val = $val - $GLOBALS["tzone"];
     					elseif(strtotime($val) < 10000)	# An inadequate Timestamp & non-valid string time
     						$val = strtotime(Format_Val($GLOBALS["BT"]["DATE"], $val)) - $GLOBALS["tzone"];	# Try to apply DATE validation
     					else
@@ -2035,6 +2034,7 @@ function Compile_Report($id, $cur_block, $exe=TRUE, $check=FALSE, $noFilters=FAL
 
 			$not_all_joined = TRUE;
 			$circle = 0;
+			$par_orig = "";
 			while($not_all_joined){
 				$not_all_joined = FALSE;
 				$no_progress = TRUE;
@@ -2042,7 +2042,7 @@ function Compile_Report($id, $cur_block, $exe=TRUE, $check=FALSE, $noFilters=FAL
 				    die_info($GLOBALS["STORED_REPS"][$id]["header"].": ".t9n("[RU]Не могу связать колонки отчета.[EN]Failed to link the columns of the report."));
 				foreach($GLOBALS["STORED_REPS"][$id]["types"] as $key => $typ){ # Column # => Type
 					if(strlen($typ)){ # A real field, not a synthetic (calculatable) one
-						$par = $par_alias = $par_orig = isset($GLOBALS["STORED_REPS"]["parents"][$typ]) ? $GLOBALS["STORED_REPS"]["parents"][$typ] : $typ;
+						$par = $par_alias = isset($GLOBALS["STORED_REPS"]["parents"][$typ]) ? $GLOBALS["STORED_REPS"]["parents"][$typ] : $typ;
 						$alias = $typ;
 						if(!isset($master)){  # Master is the Parent of the first column of the report
 							$master = $par_alias;
@@ -3905,10 +3905,12 @@ function Compile_Report($id, $cur_block, $exe=TRUE, $check=FALSE, $noFilters=FAL
             		    elseif(Check_Grant($origType, 0, "WRITE", FALSE))
                 		    $json["columns"][$i]["granted"] = 1;
         		    }
-        		    if(isset($GLOBALS["STORED_REPS"][$id]["ref_typ"][$origType]))
+        		    if(isset($GLOBALS["STORED_REPS"][$id]["ref_typ"][$origType])){
             		    $json["columns"][$i]["ref"] = 1;
             		    $json["columns"][$i]["orig"] = $GLOBALS["STORED_REPS"][$id]["ref_typ"][$origType];
 					}
+					$i++;
+				}
     	    $i = 0;
         	foreach($GLOBALS["STORED_REPS"][$id]["last_res"] as $rs)
     		    $json["data"][$i++] = $rs;
@@ -4421,6 +4423,8 @@ function Get_block_data($block, $exe=TRUE, $noFilters=FALSE)
     				$GLOBALS["GLOBAL_VARS"]["api"]["obj"]["typ"] = $row["t"];
     				$GLOBALS["GLOBAL_VARS"]["api"]["obj"]["typ_name"] = $row["typ_name"];
     				$GLOBALS["GLOBAL_VARS"]["api"]["obj"]["base_typ"] = $row["base_typ"];
+					if(($GLOBALS["REV_BT"][$row["base_typ"]] === "REPORT_COLUMN") || ($GLOBALS["REV_BT"][$row["base_typ"]] === "GRANT"))
+						$GLOBALS["GLOBAL_VARS"]["api"]["obj"]["term"] = $row["val"];
     			}
     			
 				GetObjectReqs($GLOBALS["parent_typ"], $id);
@@ -4523,7 +4527,7 @@ function Get_block_data($block, $exe=TRUE, $noFilters=FALSE)
 			break;
 
 		case "&rep_col_list":
-			$existing = $in_list = array();  # Existing columns with parent Objects, columns added to the list
+			$existing = $on_list = array();  # Existing columns with parent Objects, columns added to the list
 			$parent_id = $GLOBALS["parent_id"];
 			$parent_val = $GLOBALS["parent_val"];
 			$req = Array();
@@ -4611,13 +4615,13 @@ function Get_block_data($block, $exe=TRUE, $noFilters=FALSE)
 				# Do not allow to create reports including the object forbidden in the role
 			    if(isset($blocks["&main..&uni_obj.&new_req_report_column"]) && !Grant_1level($pid))
 			        continue;
-				if(!isset($in_list[$pid])  # Add a separate record for the Object's Value
+				if(!isset($on_list[$pid])  # Add a separate record for the Object's Value
 					|| (!isset($parent_listed) && ($pid == $GLOBALS["parent_val"])))
 				{
 					if((!isset($parent_listed) && ($pid == $GLOBALS["parent_val"])))
 						$parent_listed = TRUE;
 					
-					$in_list[$pid] = ""; # Mark it listed
+					$on_list[$pid] = ""; # Mark it listed
 					$blocks[$block]["id"][] = $pid;
 					$blocks[$block]["val"][] = $row["par_name"];
 					if($GLOBALS["parent_val"] == $pid)
@@ -7530,7 +7534,7 @@ function pwd_reset($u)
                 	login($z, $u, "SMS", t9n("[RU]Пароль отправлен в SMS[EN]The password is sent via SMS"));
 				}
 		}
-		setcookie($z, "", time() - 3600, "/");  # Remove the password and secret cookies
+		setcookie("idb_$z", "", time() - 3600, "/");  # Remove the password and secret cookies
 		setcookie("secret", "", time() - 3600, "/");
 	}
 	login($z, $u,"WRONG_CONT", t9n("[RU]Неверное имя, email или телефон в ЛК[EN]The user name, email or phone invalid set in your Space"));
@@ -7668,8 +7672,8 @@ function authJWT($u){
 		$GLOBALS["GLOBAL_VARS"]["user"] = $row["val"];
 		$GLOBALS["GLOBAL_VARS"]["user_id"] = $row["uid"];
 		updateTokens($row);
-#		setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], time() + COOKIES_EXPIRE, "/"); # 30 days
-		setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], 0, "/"); # Uon browser close
+#		setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], time() + COOKIES_EXPIRE, "/"); # 30 days
+		setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], 0, "/"); # Uon browser close
     	api_dump(json_encode(array("_xsrf"=>$GLOBALS["GLOBAL_VARS"]["xsrf"],"token"=>$GLOBALS["GLOBAL_VARS"]["token"],"id"=>$GLOBALS["GLOBAL_VARS"]["user_id"],"user"=>$GLOBALS["GLOBAL_VARS"]["user"])), "login.json");
 	}
 	else
@@ -7776,16 +7780,16 @@ switch($a)  # Check actions, which don't require authentication
 			}
 			updateTokens($row);
 #			if(isset($_POST["save"]))
-#				setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], 0, "/");  # The cookie to be deleted upon the session close
+#				setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], 0, "/");  # The cookie to be deleted upon the session close
 #			else
-				setcookie($z, $GLOBALS["GLOBAL_VARS"]["token"], time() + COOKIES_EXPIRE, "/"); # 30 days
+				setcookie("idb_$z", $GLOBALS["GLOBAL_VARS"]["token"], time() + COOKIES_EXPIRE, "/"); # 30 days
 		}
 		elseif((strtolower($u) == "admin") && (hash('sha512', sha1($_SERVER["SERVER_NAME"].$z.$p).$z) === hash('sha512', ADMINHASH.$z))){
 			$GLOBALS["GLOBAL_VARS"]["user"] = $GLOBALS["GLOBAL_VARS"]["role"] = "admin";
 			$GLOBALS["GLOBAL_VARS"]["user_id"] = 0;
 			$GLOBALS["GLOBAL_VARS"]["xsrf"] = hash('sha512', $z.ADMINHASH);
 			$GLOBALS["GLOBAL_VARS"]["token"] = hash('sha512', ADMINHASH.$z);
-			setcookie($z, hash('sha512', ADMINHASH.$z), 0, "/");
+			setcookie("idb_$z", hash('sha512', ADMINHASH.$z), 0, "/");
 		}
 		elseif(isApi())
 		    my_die(t9n("[RU]Неверный логин или пароль $u @ $z".". Логин и пароль следует отправлять POST-параметрами.[EN]Wrong credentials for user $u in $z".". Please send login and password as POST-parameters."));
@@ -7933,8 +7937,10 @@ if(Validate_Token())
 			        $rid = $id;
     				$id = $row["up"];
     				$ord = $row["ord"];
-    				Exec_sql("UPDATE $z SET ord=(CASE WHEN id=$rid THEN LEAST($newOrd, (SELECT max(ord) FROM $z WHERE up=$id)) ELSE ord+SIGN($ord-$newOrd) END)"
-    						." WHERE up=$id AND ord BETWEEN LEAST($ord, $newOrd) AND GREATEST($ord, $newOrd)", "Set exact obj order");
+					Exec_sql("UPDATE $z CROSS JOIN (SELECT MAX(ord) as max_ord FROM $z WHERE up = $id) m
+							  SET ord = CASE WHEN id = $rid THEN LEAST($newOrd, m.max_ord) ELSE ord + SIGN($ord - $newOrd) END
+							  WHERE up = $id AND ord BETWEEN LEAST($ord, $newOrd) AND GREATEST($ord, $newOrd)",
+							  "Set exact obj order");
 			    }
     			$obj=$id;
 			}
@@ -8347,11 +8353,9 @@ if(Validate_Token())
 									FROM $z a, $z up, $z target, $z reqs
 									WHERE up.id=a.up AND a.id=$id AND target.id=$up AND reqs.up=$up"
 								, "Get Obj to move");
-			if($row = mysqli_fetch_array($result))
-			{
+			if($row = mysqli_fetch_array($result)){
 			    $arg = "moved&";
-				if($up != 1)
-				{
+				if($up != 1){
 					Check_Grant($up, $row["t"]);
 					$arg .= "&F_U=$up";  # Retain this for Array elements only
 					$ord = $row["new_ord"];
@@ -8362,10 +8366,14 @@ if(Validate_Token())
 					$ord = 1;
 				if($row["up"]==0)
 					exit("Cannot update meta-data");
-				if($row["ut"]!=$row["tt"])
-					exit("Types mismatch ".$row["t"]."!=".$row["tt"]);
-				if($row["up"]!=$up)
-				{
+				if($row["ut"] !== $row["tt"]){
+					# The target is of a different type - check the req's presence
+					$result = Exec_sql("SELECT 1 FROM $z obj, $z reqs WHERE obj.id=reqs.up AND obj.id=".$row["tt"]." AND reqs.t=".$row["t"]
+										, "Check if the target parent has this req");
+					if(!mysqli_fetch_array($result))
+						exit("Types mismatch ".$row["ut"]."!==".$row["tt"]);
+				}
+				if($row["up"]!=$up){
 #					echo("The same parent $up");
 					Exec_sql("UPDATE $z SET ord=$ord, up=$up WHERE id=$id", "Move Obj");
 					Exec_sql("UPDATE $z SET ord=ord-1 WHERE up=".$row["up"]." AND t=".$row["t"]." AND ord>".$row["ord"], "Move peers up");
@@ -8972,14 +8980,17 @@ if(Validate_Token())
                         LEFT JOIN $z typs ON typs.id=req.t
                         LEFT JOIN $z refs ON refs.id=typs.t AND refs.t!=refs.id
                         LEFT JOIN $z arrs ON refs.id IS NULL AND arrs.up=typs.id AND arrs.ord=1
-        			WHERE ".($isOne ? "obj.id=$id" : "obj.up=0 AND obj.id!=obj.t AND obj.val!='' AND obj.t!=0")
+        			WHERE ".($isOne ? "obj.id=$id" : "obj.up=0 AND obj.id!=obj.t AND obj.t!=0")
         		." ORDER BY obj.id, req.ord";
         	$data_set = Exec_sql($sql, "Get the Term meta");
             $data = $data_set->fetch_all(MYSQLI_ASSOC);
             $reqs = Array();
+			$refs = Array();
         	foreach($data as $row) // Collect all the reqs to skip them later
         	    if(!is_null($row["ref_id"]))
         	        $reqs[$row["ref_id"]] = $row["id"];
+        	    elseif((int)$row["t"] > 17) // Reference: the type is not a base type
+        	        $refs[$row["t"]] = $row["id"];
         	$meta = Array();
             $metaReqs = Array();
         	foreach($data as $row){
@@ -8987,7 +8998,10 @@ if(Validate_Token())
     		        die("Invalid Term id $id");
                 if(!$row["ord"] && isset($reqs[$row["id"]])) // Skip reqs with no reqs
                     continue;
-    	        $meta[$row["id"]] = "\"id\":\"".$row["id"]."\",\"up\":\"".$row["up"]."\",\"type\":\"".$row["t"]."\",\"val\":\"".$row["val"]."\",\"unique\":\"".$row["uniq"]."\"";
+                if((int)$row["t"] > 17) // Skip refs
+                    continue;
+    	        $meta[$row["id"]] = "\"id\":\"".$row["id"]."\",\"up\":\"".$row["up"]."\",\"type\":\"".$row["t"]."\",\"val\":\"".$row["val"]."\",\"unique\":\"".$row["uniq"]."\""
+									.(isset($refs[$row["id"]]) ? ",\"referenced\":\"".$refs[$row["id"]]."\"" : ""); 
                 if($row["ord"])
                     $metaReqs[$row["id"]][] = "{\"num\":".$row["ord"].",\"id\":\"".$row["req_t"]."\""
                                 .",\"val\":\"".addcslashes($row["req_val"], "\\\'")."\""
@@ -9022,27 +9036,43 @@ if(Validate_Token())
 		    
 		case "terms":
 			$sql = "SELECT a.id, a.val, a.t, reqs.t reqs_t FROM $z a LEFT JOIN $z reqs ON reqs.up=a.id
-						WHERE a.up=0 AND a.id!=a.t AND a.val!='' AND a.t!=0 ORDER BY a.val";
+					WHERE a.up=0 AND a.id!=a.t AND a.val!='' AND a.t!=0 ORDER BY a.val";
 			$data_set = Exec_sql($sql, "Get all independent Terms");
-			while($row = mysqli_fetch_array($data_set))  # All but buttons and calculatables
-				if(($GLOBALS["REV_BT"][$row["t"]] != "CALCULATABLE") && ($GLOBALS["REV_BT"][$row["t"]] != "BUTTON"))
-				{
-				    $base[$row["id"]] = $row["t"];
-					if(!isset($req[$row["id"]]))  # Not used as Req yet
+
+			$typ = [];
+			$base = [];
+			$req = [];
+
+			while($row = mysqli_fetch_array($data_set)) {
+				// All but buttons and calculatables
+				if(($GLOBALS["REV_BT"][$row["t"]] != "CALCULATABLE") && ($GLOBALS["REV_BT"][$row["t"]] != "BUTTON")) {
+					$base[$row["id"]] = $row["t"];
+					
+					if(!isset($req[$row["id"]])) { // Not used as Req yet
 						$typ[$row["id"]] = $row["val"];
-					if($row["reqs_t"])	# Check if our Reqs are on list of independents and remove them
-					{
+					}
+					
+					if($row["reqs_t"]) { // Check if our Reqs are on list of independents and remove them
 						unset($typ[$row["reqs_t"]]);
-						$req[$row["reqs_t"]] = "";	# Remember the Req ID
+						$req[$row["reqs_t"]] = ""; // Remember the Req ID
 					}
 				}
-	        $json = "";
-			if(count($typ))
-				foreach($typ as $id => $val)
-					if(Grant_1level($id))
-        		        $json .= "{\"id\":$id,\"type\":".$base[$id].",\"name\":\"".htmlspecialchars($val)."\"},";
-	        $json = $json === "" ? "[]" : "[".mb_substr($json, 0, -1)."]";
-	        api_dump($json, "terms.json");
+			}
+
+			$result = [];
+			if(count($typ)) {
+				foreach($typ as $id => $val) {
+					if(Grant_1level($id)) {
+						$result[] = [
+							"id" => (int)$id,
+							"type" => (int)$base[$id],
+							"name" => htmlspecialchars($val)
+						];
+					}
+				}
+			}
+			api_dump(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "terms.json");
+
 		    break;
 
 		case "_ref_reqs":
@@ -9119,6 +9149,8 @@ if(Validate_Token())
 				}
 			}
 		    //trace("wild_search $wild_search");
+		    if(!isset($dic))
+		        my_die("{\"error\":\"No suitable dictionary found\"}");
 			if(isset($_REQUEST["q"]) && strlen($_REQUEST["q"])){	# Apply Req filter, if any
     		    $wild_search = $wild_search === "" ? "vals.val" : "concat(vals.val $wild_search)";
 				$GLOBALS["REV_BT"][1] = "SHORT";
@@ -9189,6 +9221,113 @@ if(Validate_Token())
 			die(json_encode($list, JSON_UNESCAPED_UNICODE));
 			break;
 			
+		case "rep_cols":
+			$existing = $on_list = array();  # Existing columns with parent Objects, columns added to the list
+			$req = Array();
+			$data_set = Exec_sql("SELECT a.id, a.val, a.t, reqs.t reqs_t FROM $z a LEFT JOIN $z reqs ON reqs.up=a.id
+									WHERE a.up=0 AND a.id!=a.t AND a.val!='' AND a.t!=0 ORDER BY a.val"
+							, "Get all independent singles");
+			while($row = mysqli_fetch_array($data_set))  # All but buttons and calculatables
+				if(($GLOBALS["REV_BT"][$row["t"]] != "CALCULATABLE") && ($GLOBALS["REV_BT"][$row["t"]] != "BUTTON"))
+					if($row["reqs_t"])	# Check if our Reqs are on list of independents and remove them
+						$req[$row["reqs_t"]] = "";	# Remember the Req ID
+			$data_set = Exec_sql("SELECT pars.id par_id, reqs.id req_id, pars.val par_name, reqs.val ref_name, NULL cols
+							, req_typs.id req_typ, ref_reqs.id ref_typ
+							, CASE WHEN req_typs.val='' THEN ref_reqs.val ELSE req_typs.val END req_name, arr.id arr
+							, CASE WHEN req_typs.val='' THEN ref_reqs.t ELSE req_typs.t END base
+						FROM $z pars
+							LEFT JOIN $z reqs ON reqs.up=pars.id
+							LEFT JOIN $z req_typs ON req_typs.id=reqs.t
+							LEFT JOIN $z ref_reqs ON ref_reqs.id=req_typs.t AND ref_reqs.id!=ref_reqs.t
+							LEFT JOIN $z arr ON ref_reqs.id IS NULL AND arr.up=req_typs.id AND arr.ord=1
+						WHERE pars.up=0 AND pars.val!='' AND pars.t!=pars.id ORDER BY pars.val, reqs.ord"
+						, "Get All Report Columns");
+            $i = 0;
+			while($row = mysqli_fetch_array($data_set)){
+				$pid = $row["par_id"];
+			    if(isset($req[$pid]))
+			        continue;
+				# Do not allow to create reports including the object forbidden in the role
+			    if(!Grant_1level($pid))
+			        continue;
+				if(!isset($on_list[$pid])){  # Add a separate record for the Object's Value
+					$on_list[$pid] = ""; # Mark it listed
+						
+					$GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["id"] = $pid;
+					$GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["name"] = $row["par_name"];
+					$GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["type"] = $pid;
+					$GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["table"] = $pid;
+					$GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["base"] = $GLOBALS["REV_BT"][$row["par_base"]];
+					$i++;
+				}
+#print_r($blocks);die();
+				if(strlen($row["arr"]) || !isset($row["req_id"])) # Skip Array reqs or objects without reqs
+					continue;
+				if(!Check_Grant($pid, $row["req_id"], "READ", FALSE))
+					continue;
+				$alias = $row["par_name"]." -> ".$row["req_name"];
+				# Correct the column name in case there is an alias
+				if(isset($row["ref_typ"]) && strlen($row["ref_name"])){
+					$tmp = FetchAlias($row["ref_name"], $row["req_name"]);
+					if($tmp != $row["req_name"])
+						$alias = $row["par_name"]." -> $tmp (".$row["req_name"].")";
+				}
+    			if($row["base"]){
+        		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["id"] = $row["req_id"];
+        		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["name"] = $alias;
+        		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["type"] = $row["req_typ"];
+        		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["base"] = $GLOBALS["REV_BT"][$row["base"]];
+        		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["table"] = $pid;
+    				if(isset($row["ref_typ"]) && strlen($row["ref_name"]))
+            		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["ref"] = $row["ref_typ"];
+    			}
+    		    $i++;
+ 			}
+			# Add Calculated field, which is to be calculated by an expression, constructed from aliases
+   		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["id"] = "0";
+   		    $GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"][$i]["name"] = CUSTOM_REP_COL;
+			api_dump(json_encode($GLOBALS["GLOBAL_VARS"]["api"]["rep_col_list"], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "rep_cols	.json");
+			break;
+
+		case "grants":
+			$existing = $req = array();  # Existing grants
+			$result = [];
+			$data_set = Exec_sql("SELECT gr.id, gr.val, reqs.id req_id, reqs.t req_t, req_typ.val req_val, ref_reqs.val ref_val
+									FROM $z gr LEFT JOIN ($z reqs CROSS JOIN $z req_typ) ON gr.id!=1 AND reqs.up=gr.id AND req_typ.id=reqs.t
+										LEFT JOIN $z ref_reqs ON ref_reqs.id!=ref_reqs.t AND ref_reqs.id=req_typ.t
+									WHERE gr.up=0 AND gr.t!=gr.id AND gr.val!='' AND !COALESCE(gr.t=0 OR req_typ.t=0, false)
+									ORDER BY gr.val, reqs.ord"
+					, "Get all Grants");
+			while($row = mysqli_fetch_array($data_set)){
+				$i = $row["id"];
+				if(!isset($existing[$i]) && !isset($req[$i])){ # Add the parent Object to the list
+					$existing[$i] = "";
+					$result[$i] = [
+						"id" => $i,
+						"name" => htmlspecialchars($row["val"])
+					];
+				}
+				if(($row["req_id"] != 0) && !isset($existing[$row["req_id"]])){	# Add the requisites
+					$req[$row["req_t"]] = "";
+					if(isset($existing[$row["req_t"]]))	# Drop the record on this Req
+						unset($result[$row["req_t"]]);
+					$result[$row["req_id"]] = [
+						"id" => (int)$row["req_id"],
+						"name" => htmlspecialchars($row["val"])." -> ".htmlspecialchars($row["req_val"].$row["ref_val"])
+					];
+				}
+			}
+			$tmp = [];
+			foreach($result as $val)
+				$tmp[] = $val;
+			foreach(array(0, 1, 10) as $key) # Add "All objects" & "Type Editor" grants on the list
+				$tmp[] = [
+					"id" => $key,
+					"name" => htmlspecialchars(Format_Val_View($GLOBALS["BT"]["GRANT"], "$key"))
+				];
+			api_dump(json_encode($tmp, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "grants.json");
+			break;
+
 		case "_connect":
 			if($id == 0)
 				my_die(t9n("[RU]Неверный id ($id) [EN]Invalid id ($id)"));
@@ -9254,6 +9393,7 @@ if(Validate_Token())
     				die("[".implode(",", $GLOBALS["GLOBAL_VARS"]["newapi"])."]");
 			    elseif(isset($_REQUEST["JSON_OBJ"]))
     				api_dump(json_encode($GLOBALS["GLOBAL_VARS"]["newapi"], JSON_UNESCAPED_UNICODE), "object_$id.json");
+				else
     				die(json_encode($GLOBALS["GLOBAL_VARS"]["api"], JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE));
         	if(($z == $GLOBALS["GLOBAL_VARS"]["user"]) || ($GLOBALS["GLOBAL_VARS"]["user"] == "admin"))
         		echo str_replace("<!--Elapsed-->"
